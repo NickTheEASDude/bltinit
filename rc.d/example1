@@ -24,6 +24,11 @@
 # IMPORTANCE: critical
 ### END rc-info
 
+# Just a note, there are some optional parameters in rc-info, BEFORE and IMPORTANCE (as shown in example2).
+# BEFORE just makes ordering of scripts that aren't strictly "required" by other ones a bit easier.
+# IMPORTANCE only really takes one answer, critical, and ignores anything else.
+# If rc.subr sees that set, and if the script fails (be it oneshot or daemon), it'll drop the user to /bin/sh.
+
 name="example1"
 rcvar="${name}_enable"
 pidfile="/run/${name}.pid"
