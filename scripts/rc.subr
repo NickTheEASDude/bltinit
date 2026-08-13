@@ -1,0 +1,136 @@
+#!/bin/sh
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+checkyesno() {
+	eval val=\$$1
+	case "$val" in
+		[Yy][Ee][Ss]|[1]|[Tt][Rr][Uu][Ee])
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+load_rc_config() {
+	test -f /etc/rc.conf && . /etc/rc.conf
+}
+
+get_rc_meta() {
+	awk -F': *' -v k="# $1" '$0 ~ "^"k":" {print $2; exit}' "$2"
+}
+
+is_running() {
+	test -n "$pidfile" && test -f "$pidfile" && pgrep --quiet -F "$pidfile" "$name" 2> /dev/null
+}
+
+default_stop_cmd() {
+	local pid sig="${sig_stop:-TERM}" timeout="${stop_timeout:-30}" n=0
+	timeout=$((timeout*10))
+	pid="$(cat "$pidfile")"
+	kill -s "$sig" "$pid" 2> /dev/null
+	while kill -0 "$pid" 2> /dev/null && test $n -lt "$timeout"; do
+		sleep 0.1; n=$((n+1))
+	done
+	kill -0 "$pid" 2> /dev/null && kill -KILL "$pid" 2> /dev/null
+	rm -f "$pidfile"
+}
+
+run_rc_command() {
+	load_rc_config "$name"
+	type="${type:-$(get_rc_meta TYPE "$0")}"
+	importance="${importance:-$(get_rc_meta IMPORTANCE "$0")}"
+	case "$1" in
+		start)
+			if test "$RC_BOOT" = "1" && test -n "$rcvar" && ! checkyesno "$rcvar"; then
+				exit 0
+			fi
+			if test "$type" = "oneshot"; then
+				test -n "$start_msg" \
+					&& echo "${start_msg}" \
+					|| echo "/ Starting $name"
+				start_cmd
+				rc=$?
+				if test $rc -ne 0; then
+					if test "$importance" = "critical"; then
+						echo "CRITICAL: $name failed to complete" >&2
+						echo "Dropping to /bin/sh" >&2
+						exec /bin/sh
+					else
+						echo "$name failed to complete" >&2
+					fi
+				fi
+			else
+				if is_running; then
+					echo "$name already started"
+					exit 0
+				fi
+				test -n "$start_msg" \
+					&& echo "${start_msg}" \
+					|| echo "/ Starting $name"
+				eval "$cmd $cmd_args"
+				rc=$?
+				ATTEMPTS=5
+				while test "$ATTEMPTS" -ne 0; do
+					sleep 0.1
+					ATTEMPTS=$((ATTEMPTS-1))
+					if is_running; then
+						break
+					fi
+				done
+				if test $rc -ne 0 || ! is_running; then
+					if test -n "$pidfile" && test -f "$pidfile"; then
+						rm -f "$pidfile"
+					fi
+					if test "$importance" = "critical"; then
+						echo "CRITICAL: $name failed to start" >&2
+						echo "Dropping to /bin/sh" >&2
+						exec /bin/sh
+					fi
+					echo "ERROR: $name failed to start" >&2
+				fi
+			fi
+			;;
+		stop)
+			if test "$type" = "oneshot"; then
+				if command -v stop_cmd > /dev/null 2>&1; then
+					test -n "$stop_msg" \
+						&& echo "${stop_msg}" \
+						|| echo "/ Stopping $name"
+					stop_cmd
+				fi
+			else
+				if ! is_running; then
+					if test "$RC_SHUT" != "1"; then
+						echo "$name isn't running"
+					fi
+					exit 0
+				fi
+				test -n "$stop_msg" \
+					&& echo "${stop_msg}" \
+					|| echo "/ Stopping $name"
+				if command -v stop_cmd > /dev/null 2>&1; then
+					stop_cmd
+				else
+					default_stop_cmd
+				fi
+			fi
+			;;
+		status)
+			if test "$type" = "oneshot"; then
+				echo "$name is oneshot, has no status"
+			else
+				is_running && echo "$name is running as $(cat "$pidfile")" \
+					|| echo "$name isn't running"
+			fi
+			;;
+		restart)
+			$0 stop
+			$0 start
+			;;
+		*)
+			echo "Usage: $0 {start|stop|restart|status}"
+			exit 1
+			;;
+	esac
+}

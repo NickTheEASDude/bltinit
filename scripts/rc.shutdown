@@ -1,0 +1,14 @@
+#!/bin/sh
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+order=$(/sbin/rcorder /etc/rc.d/* | tac)
+EXIT=$?
+sleep 0.5
+echo -n "\n"
+if test "$EXIT" -ne 0; then
+	echo "rc.shutdown: rcorder failed" >&2
+	echo "Continuing shutdown, note some or all services may have failed to stop" >&2
+else
+	for f in $order; do
+		test -x "$f" && RC_SHUT=1 "$f" stop
+	done
+fi

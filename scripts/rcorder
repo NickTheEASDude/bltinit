@@ -1,0 +1,59 @@
+#!/bin/sh
+
+for f in "$@"; do
+        provides=$(awk -F': *' '/^# PROVIDES:/{print $2}' "$f")
+        requires=$(awk -F': *' '/^# REQUIRES:/{print $2}' "$f")
+        before=$(awk -F': *' '/^# BEFORE:/{print $2}' "$f")
+        echo "$f|${provides:-$f}|${requires}|${before}"
+done | python3 -c '
+import sys
+
+lines = [line.rstrip("\n").split("|") for line in sys.stdin]
+
+nodes = []
+provides = {}
+deps = {}
+
+for f, prov, req, bef in lines:
+        for p in prov.split():
+                provides[p.strip()] = f
+        nodes.append(f)
+
+for f, prov, req, bef in lines:
+        deps.setdefault(f, [])
+        deps[f] += [r.strip() for r in req.split() if r.strip() != "none"]
+        for b in bef.split():
+                b = b.strip()
+                if not b:
+                        continue
+                target_file = provides.get(b)
+                if target_file is None:
+                        continue
+                own_name = prov.strip() if prov.strip() else f
+                deps.setdefault(target_file, [])
+                deps[target_file].append(own_name)
+
+seen = set()
+stack = set()
+order = []
+
+def visit(n):
+        if n in seen:
+                return
+        if n in stack:
+                sys.stderr.write(f"rcorder: circular dependency at {n}\n")
+                sys.exit(1)
+        stack.add(n)
+        for r in deps.get(n, []):
+                target = provides.get(r)
+                if target is None:
+                        continue
+                visit(target)
+        stack.discard(n)
+        seen.add(n)
+        order.append(n)
+
+for n in nodes:
+        visit(n)
+print("\n".join(order))
+'
