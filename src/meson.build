@@ -4,3 +4,10 @@ executable(
   install: true,
   install_dir: get_option('sbindir')
 )
+
+executable(
+  'rundaemon', 'rundaemon.c',
+  include_directories: includes,
+  install: true,
+  install_dir: get_option('sbindir')
+)

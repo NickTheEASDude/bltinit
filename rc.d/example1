@@ -1,0 +1,44 @@
+#!/bin/sh
+# An example of a daemonizing program using the provided rundaemon(8)
+
+# Copyright (C) 2026 BLT Sandwich
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+### BEGIN rc-info
+# PROVIDES: example1
+# REQUIRES: none
+# BEFORE: MULTIUSER
+# TYPE: daemon
+# IMPORTANCE: critical
+### END rc-info
+
+name="example1"
+rcvar="${name}_enable"
+pidfile="/run/${name}.pid"
+# If you don't provide start_msg or stop_msg, defaults will be used.
+# Also true of stop_cmd(), in both oneshot and daemonizing scripts.
+start_msg="+ Starting $name"
+stop_msg="- Stopping $name"
+cmd="/sbin/rundaemon"
+cmd_args="$pidfile exampleprog"
+
+stop_cmd() {
+	echo "maybe you need to do some cleanup or something" || return 1
+	echo "you can also invoke the default_stop_cmd() from here if you want rc.subr to handle stopping."
+	default_stop_cmd
+}
+
+. /etc/rc.subr
+run_rc_command "$1"
