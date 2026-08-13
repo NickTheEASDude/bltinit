@@ -190,6 +190,19 @@ END OF TERMS AND CONDITIONS
 
 Additional Permission Under GPLv3 Section 7
 
-As an exception to the terms of the GNU General Public License version 3 (GPLv3), the copyright holders of this software grant permission to convey, modify, redistribute, and reuse any files located within the /scripts/ directory (or subdirectories) under the terms of the 3-Clause BSD License. 
+The contents of the /scripts/ directory (or subdirectories) authored by the
+copyright holders of this software remain licensed under GPLv3 in full, with
+no exception or reduction of its terms.
 
-Anyone who modifies or forks this repository is explicitly permitted to remove the GPLv3 licensing requirements from the contents of this specific directory and treat them as purely BSD-licensed code.
+As an exception to the terms of the GNU General Public License version 3
+(GPLv3), the copyright holders grant permission for forks and modified
+versions of this repository to add, alongside the existing GPLv3-licensed
+files in /scripts/ (or subdirectories), additional files licensed under the
+3-Clause BSD License. Such BSD-licensed additions are not required to be
+relicensed under GPLv3 merely by virtue of residing in the same directory as
+GPLv3-licensed files, provided they remain in separate files and are not
+combined with the GPLv3 code so as to form a single work.
+
+This permission does not extend to the original GPLv3-licensed files
+themselves, which may not be relicensed, stripped of their GPLv3 terms, or
+redistributed as BSD-licensed code.
