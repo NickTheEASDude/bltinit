@@ -27,7 +27,8 @@ name="example2"
 rcvar="${name}_enable"
 
 # If you don't provide start_msg or stop_msg, defaults will be used.
-# Also true of stop_cmd(), in both oneshot and daemonizing scripts.
+# Also true of stop_cmd(), but only in daemonizing scripts.
+# If no stop_cmd() is provided in a oneshot, no stop action is performed.
 
 start_cmd() {
 	mkdir -p /tmp/example || return 1
