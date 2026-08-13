@@ -1,5 +1,5 @@
 #!/bin/sh
-# Same as rc(5), but invokes the stop command in each rc.d script, and in reverse order.
+# Sends a signal to init to begin the reboot/halt/poweroff process.
 
 # Copyright (C) 2026 BLT Sandwich
 
@@ -17,16 +17,31 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
-order=$(/sbin/rcorder /etc/rc.d/*)
-EXIT=$?
-order=$(echo "$order" | tac)
-sleep 0.5
-echo ""
-if test "$EXIT" -ne 0; then
-	echo "rc.shutdown: rcorder failed" >&2
-	echo "Continuing shutdown, note some or all services may have failed to stop" >&2
-else
-	for f in $order; do
-		test -x "$f" && RC_SHUT=1 "$f" stop
-	done
+if test $(id -u) -ne 0; then
+	echo "This program must be run as root" >&2
+	exit 1
+fi
+if test $$ -ne 1; then
+	case $1 in
+		"halt")
+			kill -10 1
+			;;
+		"shutdown")
+			kill -15 1
+			;;
+		"reboot")
+			kill -2 1
+			;;
+	esac
+	case $0 in
+		*"halt")
+			kill -10 1
+			;;
+		*"shutdown"|*"poweroff")
+			kill -15 1
+			;;
+		*"reboot")
+			kill -2 1
+			;;
+	esac
 fi
