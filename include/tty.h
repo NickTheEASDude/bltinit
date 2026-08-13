@@ -24,7 +24,7 @@
 #include <stdbool.h>
 #define MAX_CONSOLES 32
 
-typedef enum { SPAWN_ONCE, SPAWN_REPEAT } smode_t;
+typedef enum { SPAWN_ONCE, SPAWN_REPEAT, SPAWN_ERR } smode_t;
 typedef struct {
         char      device[64];
         char      baud[16];

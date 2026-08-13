@@ -67,7 +67,7 @@ int loadConsoles(const char *path) {
 		int matched = sscanf(p, "%63s %15s %7s %255[^\n]",
 				      device, baud, modeStr, prog);
 		if (matched != 4) {
-			broadcast("rc.consoles: malformed line: %s\n", p);
+			broadcast("rc.consoles: malformed line %s, skipping\n", p);
 			continue;
 		}
 
@@ -76,7 +76,11 @@ int loadConsoles(const char *path) {
 		snprintf(c->device, sizeof(c->device), "%s", device);
 		snprintf(c->baud, sizeof(c->baud), "%s", baud);
 		c->mode = (modeStr[0] == 'R' || modeStr[0] == 'r')
-			    ? SPAWN_REPEAT : SPAWN_ONCE;
+			    ? SPAWN_REPEAT : (modeStr[0] == 'S' || modeStr[0] == 's') ? SPAWN_ONCE : SPAWN_ERR;
+		if (c->mode == SPAWN_ERR) {
+			broadcast("rc.consoles: line %s spawn type incorrent, skipping\n", p);
+			continue;
+		}
 		snprintf(c->prog, sizeof(c->prog), "%s", prog);
 		c->pid = -1;
 		n++;
