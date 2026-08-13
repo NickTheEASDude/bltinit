@@ -29,7 +29,6 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <stdarg.h>
-#include <sys/ioctl.h>
 
 console_t consoles[MAX_CONSOLES];
 int nConsoles = 0;
