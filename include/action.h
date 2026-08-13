@@ -1,0 +1,12 @@
+#ifndef INIT_ACTION_H
+#define INIT_ACTION_H
+
+typedef enum {
+	ACTION_NORMAL,
+	ACTION_REAP,
+	ACTION_REBOOT,
+	ACTION_HALT,
+	ACTION_POWEROFF
+} action_t;
+
+#endif
