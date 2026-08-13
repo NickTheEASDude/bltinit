@@ -1,4 +1,4 @@
 This project uses the Meson build system, which usually just entails running these commands:
 meson setup build
 ninja -C build
-(as root) meson -C build install
+(as root) meson install -C build
