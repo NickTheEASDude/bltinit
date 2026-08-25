@@ -24,12 +24,12 @@
 #include <stdbool.h>
 #define MAX_CONSOLES 32
 
-typedef enum { SPAWN_ONCE, SPAWN_REPEAT, SPAWN_ERR } smode_t;
+typedef enum { SPAWN_ONCE, SPAWN_REPEAT, SPAWN_ASK, SPAWN_ERR } smode_t;
 typedef struct {
         char      device[64];
-        char      baud[16];
+        char      isGetty[8];
         smode_t   mode;
-        char      prog[256];
+        char      prog[512];
         pid_t     pid;
 } console_t;
 extern console_t consoles[MAX_CONSOLES];

@@ -15,10 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Format is always <tty#> <baud> <R|S> <default|(program to invoke)>
-tty1 115200 R default
-tty2 115200 R default
-tty3 115200 R default
-tty4 115200 R default
-tty5 115200 R default
-tty6 115200 R default
+# Format is always <tty#>:<G|X>:<R|S|A>:<program to invoke>
+# tty# is only parsed if C2 is G
+# If C2 is G and C3 is A, it's treated as if C3 is R (makes implementation easier for me)
+# NOTE: Arguments for the program are parsed using spaces, REGARDLESS OF WHETHER OR NOT QUOTES ARE USED
+#
+tty1:G:R:/sbin/getty 115200 /dev/tty1
+tty2:G:R:/sbin/getty 115200 /dev/tty2
+tty3:G:R:/sbin/getty 115200 /dev/tty3
+tty4:G:R:/sbin/getty 115200 /dev/tty4
+tty5:G:R:/sbin/getty 115200 /dev/tty5
+tty6:G:R:/sbin/getty 115200 /dev/tty6

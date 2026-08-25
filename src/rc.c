@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "rc.h"
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <err.h>
@@ -38,6 +39,7 @@ retry:
 		}
 	} else {
 		execl("/etc/rc", "/etc/rc", (char *) NULL);
+		perror("init: rc execl failed");
 		_exit(1);
 	}
 }
@@ -59,6 +61,7 @@ retry:
 		}
 	} else {
 		execl("/etc/rc.shutdown", "/etc/rc.shutdown", (char *) NULL);
+		perror("init: rc.shutdown execl failed");
 		_exit(1);
 	}
 }

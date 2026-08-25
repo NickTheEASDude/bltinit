@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <errno.h>
 
 console_t consoles[MAX_CONSOLES];
 int nConsoles = 0;
@@ -36,11 +37,8 @@ int nConsoles = 0;
 void broadcast(const char *restrict format, ...) {
 	va_list args;
 	va_start(args, format);
-	int tty0 = open("/dev/tty0", O_RDWR);
-	if (tty0 < 0) tty0 = STDOUT_FILENO;
-	vdprintf(tty0, format, args);
+	vprintf(format, args);
 	va_end(args);
-	if (tty0 != STDOUT_FILENO) close(tty0);
 }
 
 static void trimLF(char *s) {
@@ -52,7 +50,7 @@ int loadConsoles(const char *path) {
 	FILE *f = fopen(path, "r");
 	if (!f) return -1;
 
-	char line[512];
+	char line[1024];
 	int n = 0;
 
 	while (fgets(line, sizeof(line), f) && n < MAX_CONSOLES) {
@@ -61,10 +59,10 @@ int loadConsoles(const char *path) {
 		while (isspace((unsigned char)*p)) p++;
 		if (*p == '\0' || *p == '#') continue;
 
-		char device[64], baud[16], modeStr[8], prog[256];
+		char device[64], isGetty[8], modeStr[8], prog[512];
 
-		int matched = sscanf(p, "%63s %15s %7s %255[^\n]",
-				      device, baud, modeStr, prog);
+		int matched = sscanf(p, "%63s;%7s;%7s;%511[^\n]",
+			device, isGetty, modeStr, prog);
 		if (matched != 4) {
 			broadcast("rc.consoles: malformed line %s, skipping\n", p);
 			continue;
@@ -73,11 +71,24 @@ int loadConsoles(const char *path) {
 		console_t *c = &consoles[n];
 		memset(c, 0, sizeof(*c));
 		snprintf(c->device, sizeof(c->device), "%s", device);
-		snprintf(c->baud, sizeof(c->baud), "%s", baud);
+		if (
+			isGetty[0] == 'X' ||
+			isGetty[0] == 'x' ||
+			isGetty[0] == 'G' ||
+			isGetty[0] == 'g'
+		) snprintf(c->isGetty, sizeof(c->isGetty), "%s", isGetty);
+		else {
+			broadcast("rc.consoles: line %s column 2 incorrect, skipping\n", p);
+			continue;
+		}
 		c->mode = (modeStr[0] == 'R' || modeStr[0] == 'r')
-			    ? SPAWN_REPEAT : (modeStr[0] == 'S' || modeStr[0] == 's') ? SPAWN_ONCE : SPAWN_ERR;
+			    ? SPAWN_REPEAT :
+			    (modeStr[0] == 'S' || modeStr[0] == 's')
+			    ? SPAWN_ONCE :
+			    (modeStr[0] == 'A' || modeStr[0] == 'a')
+			    ? SPAWN_ASK : SPAWN_ERR;
 		if (c->mode == SPAWN_ERR) {
-			broadcast("rc.consoles: line %s spawn type incorrent, skipping\n", p);
+			broadcast("rc.consoles: line %s column 3 incorrect, skipping\n", p);
 			continue;
 		}
 		snprintf(c->prog, sizeof(c->prog), "%s", prog);
@@ -108,37 +119,22 @@ bool execGetty(console_t *c) {
 		c->pid = childPID;
 		return true;
 	} else {
-		char *args[7];
-		args[0] = "/sbin/getty";
-		int nextArg = 1;
-		if (strcmp(c->prog, "default") != 0) {
-			args[nextArg++] = "-n";
-			args[nextArg++] = "-l";
-			args[nextArg++] = c->prog;
+		setsid();
+		char prog[513];
+		strncpy(prog, c->prog, 512);
+		char *args[512];
+		int count = 1;
+		char *tokPtr;
+		for (char *tok = strtok_r(prog, " ", &tokPtr); tok != NULL; tok = strtok_r(NULL, " ", &tokPtr)) {
+			if (count == 1) args[0] = tok;
+			args[count++] = tok;
 		}
-		args[nextArg++] = c->baud;
-		args[nextArg++] = c->device;
-		args[nextArg] = (char *) NULL;
-		
-		sigset_t signals;
-		sigfillset(&signals);
-		sigprocmask(SIG_UNBLOCK, &signals, NULL);
-
-		struct sigaction sa;
-		sa.sa_handler = SIG_DFL;
-		sigemptyset(&sa.sa_mask);
-		sa.sa_flags = 0;
-		sigaction(SIGHUP, &sa, NULL);
-		sigaction(SIGINT, &sa, NULL);
-		sigaction(SIGQUIT, &sa, NULL);
-		sigaction(SIGTERM, &sa, NULL);
-		sigaction(SIGCHLD, &sa, NULL);
-		
-		close(STDIN_FILENO);
-		close(STDOUT_FILENO);
-		close(STDERR_FILENO);
-		
-		execv("/sbin/getty", args);
+		if (strcmp(c->isGetty, "G") == 0) {
+			execv(args[0], args);
+			perror("init: console execv failed");
+			_exit(1);
+		}
+		// TODO: FINISH LOGIC FOR IF ISGETTY IS X
 		_exit(1);
 	}
 }

@@ -30,19 +30,19 @@ int main(int argc, char *argv[]) {
 
 	pid_t child1 = fork();
 	if (child1 < 0) {
-		perror("child1");
+		perror("rundaemon: child1 fork failed");
 		return 1;
 	} else if (child1 > 0)
 		waitpid(child1, NULL, 0);
 	else {
 		pid_t sid = setsid();
 		if (sid < 0) {
-			perror("setsid");
+			perror("rundaemon: child1 setsid failed");
 			_exit(2);
 		}
 		pid_t child2 = fork();
 		if (child2 < 0) {
-			perror("child2");
+			perror("rundaemon: child2 fork failed");
 			_exit(3);
 		} else if (child2 > 0)
 			_exit(0);
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 				S_IROTH
 			);
 			if (pidFile < 0) {
-				perror("unable to create pidfile");
+				perror("rundaemon: unable to create pidfile");
 				_exit(4);
 			}
 			dprintf(pidFile,"%d\n", (int) getpid());
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 					close(fd);
 			}
 			execvp(newArgv[0], newArgv);
-			perror("child2: execvp failed");
+			perror("rundaemon: child2 execvp failed");
 			unlink(argv[1]);
 			_exit(1);
 		}

@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 		broadcast("ERROR: rc.consoles empty, launching /bin/sh on primary console\n");
 		console_t console = {
 			"console",
-			"0",
+			"G",
 			SPAWN_REPEAT,
 			"/bin/sh",
 			-1
