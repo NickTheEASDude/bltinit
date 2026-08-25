@@ -146,8 +146,15 @@ bool execGetty(console_t *c) {
 		dup2(fd, STDERR_FILENO);
 		if (fd > STDERR_FILENO) close(fd);
 		if (c->mode == SPAWN_ASK) {
-			broadcast("Press enter to continue...");
-			while (getchar() != '\n');
+			write(STDOUT_FILENO, "Press enter to continue... ", 27);
+			int userIn = getchar();
+			while (userIn != '\n') {
+				if (userIn < 0) {
+					broadcast("\nEnd of file reached, continuing\n");
+					break;
+				}
+				userIn = getchar();
+			}
 		}
 		execv(args[0], args);
 		perror("init: console execv failed");
