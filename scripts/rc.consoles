@@ -20,9 +20,9 @@
 # If C2 is G and C3 is A, it's treated as if C3 is R (makes implementation easier for me)
 # NOTE: Arguments for the program are parsed using spaces, REGARDLESS OF WHETHER OR NOT QUOTES ARE USED
 #
-tty1:G:R:/sbin/getty 115200 /dev/tty1
-tty2:G:R:/sbin/getty 115200 /dev/tty2
-tty3:G:R:/sbin/getty 115200 /dev/tty3
-tty4:G:R:/sbin/getty 115200 /dev/tty4
-tty5:G:R:/sbin/getty 115200 /dev/tty5
-tty6:G:R:/sbin/getty 115200 /dev/tty6
+/dev/tty1;G;R;/sbin/getty 115200 /dev/tty1
+/dev/tty2;G;R;/sbin/getty 115200 /dev/tty2
+/dev/tty3;G;R;/sbin/getty 115200 /dev/tty3
+/dev/tty4;G;R;/sbin/getty 115200 /dev/tty4
+/dev/tty5;G;R;/sbin/getty 115200 /dev/tty5
+/dev/tty6;G;R;/sbin/getty 115200 /dev/tty6

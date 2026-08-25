@@ -29,7 +29,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <stdarg.h>
-#include <errno.h>
+#include <sys/ioctl.h>
 
 console_t consoles[MAX_CONSOLES];
 int nConsoles = 0;
@@ -61,7 +61,7 @@ int loadConsoles(const char *path) {
 
 		char device[64], isGetty[8], modeStr[8], prog[512];
 
-		int matched = sscanf(p, "%63s;%7s;%7s;%511[^\n]",
+		int matched = sscanf(p, "%63[^;];%7[^;];%7[^;];%511[^\n]",
 			device, isGetty, modeStr, prog);
 		if (matched != 4) {
 			broadcast("rc.consoles: malformed line %s, skipping\n", p);
@@ -122,19 +122,35 @@ bool execGetty(console_t *c) {
 		setsid();
 		char prog[513];
 		strncpy(prog, c->prog, 512);
-		char *args[512];
-		int count = 1;
+		char *args[513];
+		int count = 0;
 		char *tokPtr;
-		for (char *tok = strtok_r(prog, " ", &tokPtr); tok != NULL; tok = strtok_r(NULL, " ", &tokPtr)) {
-			if (count == 1) args[0] = tok;
-			args[count++] = tok;
-		}
-		if (strcmp(c->isGetty, "G") == 0) {
+		for (char *tok = strtok_r(prog, " ", &tokPtr); tok != NULL; tok = strtok_r(NULL, " ", &tokPtr)) args[count++] = tok;
+		args[count] = NULL;
+		if (strcmp(c->isGetty, "G") == 0 || strcmp(c->isGetty, "g") == 0) {
 			execv(args[0], args);
 			perror("init: console execv failed");
 			_exit(1);
 		}
-		// TODO: FINISH LOGIC FOR IF ISGETTY IS X
+		int fd = open(c->device, O_RDWR | O_NOCTTY);
+		if (fd < 0) {
+			perror("init: console open failed");
+			_exit(1);
+		}
+		if (ioctl(fd, TIOCSCTTY, 0) < 0) {
+			perror("init: console takeover failed");
+			_exit(1);
+		}
+		dup2(fd, STDIN_FILENO);
+		dup2(fd, STDOUT_FILENO);
+		dup2(fd, STDERR_FILENO);
+		if (fd > STDERR_FILENO) close(fd);
+		if (c->mode == SPAWN_ASK) {
+			broadcast("Press enter to continue...");
+			while (getchar() != '\n');
+		}
+		execv(args[0], args);
+		perror("init: console execv failed");
 		_exit(1);
 	}
 }
@@ -148,7 +164,7 @@ void consoleExit(pid_t reapPID) {
 	for (int i = 0; i < nConsoles; i++) {
 		if (consoles[i].pid != reapPID) continue;
 		consoles[i].pid = -1;
-		if (consoles[i].mode == SPAWN_REPEAT)
+		if (consoles[i].mode == SPAWN_REPEAT || consoles[i].mode == SPAWN_ASK)
 			execGetty(&consoles[i]);
 		return;
 	}
