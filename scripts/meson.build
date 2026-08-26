@@ -26,3 +26,8 @@ install_data(
   install_dir: get_option('libexecdir'),
   install_mode: ['rwxr-xr-x', 0, 0]
 )
+install_data(
+  'rc.fallback',
+  install_dir: get_option('libdir') / 'rc',
+  install_mode: ['rw-r--r--', 0, 0]
+)

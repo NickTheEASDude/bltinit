@@ -21,8 +21,9 @@
 #include <sys/wait.h>
 #include <err.h>
 #include <errno.h>
+#include <stdbool.h>
 
-void startServices() {
+bool startServices() {
 retry:
 	pid_t services = fork();
 	if (services < 0) {
@@ -30,13 +31,18 @@ retry:
 		goto retry;
 	} else if (services > 0) {
 		pid_t reapedServices;
-		while ((reapedServices = waitpid(-1, NULL, 0)) != services) {
+		int status;
+		while ((reapedServices = waitpid(-1, &status, 0)) != services) {
 			if (reapedServices < 0) {
 				if (errno == ECHILD)
 					break;
 				continue;
 			}
 		}
+		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+			return true;
+		else
+			return false;
 	} else {
 		execl("/etc/rc", "/etc/rc", (char *) NULL);
 		perror("init: rc execl failed");

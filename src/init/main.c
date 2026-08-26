@@ -53,19 +53,18 @@ int main(int argc, char *argv[]) {
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	
-	startServices();
+	if (startServices() == false) {
+		broadcast("FATAL: /etc/rc exited abnormally, launching /bin/sh on primary console\n");
+		loadConsoles("/usr/lib/rc/rc.fallback");
+		goto multiSkip;
+	}
 	broadcast("Spawning consoles\n");
 	if (loadConsoles("/etc/rc.consoles") <= 0) {
 		broadcast("ERROR: rc.consoles empty, launching /bin/sh on primary console\n");
-		console_t console = {
-			"console",
-			"G",
-			SPAWN_REPEAT,
-			"/bin/sh",
-			-1
-		};
-		execGetty(&console);
+		
+		loadConsoles("/usr/lib/rc/rc.fallback");
 	}
+multiSkip:
 	spawnConsoles();
 	for (;;) {
 		pause();

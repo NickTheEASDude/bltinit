@@ -16,8 +16,9 @@
 #ifndef INIT_RC_H
 #define INIT_RC_H
 #include <sys/types.h>
+#include <stdbool.h>
 
-void startServices(void);
+bool startServices(void);
 void stopServices(void);
 
 #endif

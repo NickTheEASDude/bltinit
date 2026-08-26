@@ -76,8 +76,7 @@ run_rc_command() {
 				if test $rc -ne 0; then
 					if test "$importance" = "critical"; then
 						echo "CRITICAL: $name failed to complete" >&2
-						echo "Dropping to /bin/sh" >&2
-						exec /bin/sh
+						exit 1
 					else
 						echo "$name failed to complete" >&2
 					fi
@@ -106,8 +105,7 @@ run_rc_command() {
 					fi
 					if test "$importance" = "critical"; then
 						echo "CRITICAL: $name failed to start" >&2
-						echo "Dropping to /bin/sh" >&2
-						exec /bin/sh
+						exit 1
 					fi
 					echo "ERROR: $name failed to start" >&2
 				fi
