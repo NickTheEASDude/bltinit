@@ -55,7 +55,6 @@ default_stop_cmd() {
 		sleep 0.1; n=$((n+1))
 	done
 	kill -0 "$pid" 2> /dev/null && kill -KILL "$pid" 2> /dev/null
-	rm -f "$pidfile"
 }
 
 run_rc_command() {
@@ -133,6 +132,9 @@ run_rc_command() {
 					stop_cmd
 				else
 					default_stop_cmd
+				fi
+				if test -n "$pidfile" && test -f "$pidfile"; then
+					rm -f "$pidfile"
 				fi
 			fi
 			;;
