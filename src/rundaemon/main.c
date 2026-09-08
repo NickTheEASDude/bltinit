@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
@@ -70,10 +71,21 @@ int main(int argc, char *argv[]) {
 			int fd = open("/dev/null", O_RDWR);
 			if (fd != -1) {
 				dup2(fd, STDIN_FILENO);
-				dup2(fd, STDOUT_FILENO);
-				dup2(fd, STDERR_FILENO);
-				if (fd > STDERR_FILENO)
+				if (fd > STDIN_FILENO)
 					close(fd);
+			}
+			char *progName = strrchr(argv[2], '/');
+			if (progName == NULL) progName = argv[2];
+			char logfile[strlen(progName) + 14];
+			logfile[0] = '\0';
+			strncat(logfile, "/var/log/rc/", strlen(progName) + 13);
+			strncat(logfile, progName, strlen(progName) + 13);
+			int fd2 = open(logfile, O_RDWR | O_CREAT, 0644);
+			if (fd != -1) {
+				dup2(fd2, STDOUT_FILENO);
+				dup2(fd2, STDERR_FILENO);
+				if (fd2 > STDERR_FILENO)
+					close(fd2);
 			}
 			execvp(newArgv[0], newArgv);
 			perror("rundaemon: child2 execvp failed");

@@ -22,6 +22,7 @@ if test $? -ne 0; then
 	echo "rc: rcorder failed." >&2
 	exit 1
 fi
+mkdir -p /var/log/rc
 for f in $order; do
 	test -x "$f" && RC_BOOT=1 "$f" start
 	if test "$?" -ne 0; then
