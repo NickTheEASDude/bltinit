@@ -45,6 +45,10 @@ static void trimLF(char *s) {
 	size_t n = strlen(s);
 	if (n && s[n - 1] == '\n') s[n - 1] = '\0';
 }
+void addConsole(console_t console) {
+	consoles[nConsoles] = console;
+	nConsoles++;
+}
 
 int loadConsoles(const char *path) {
 	FILE *f = fopen(path, "r");

@@ -30,5 +30,3 @@ else
 		test -x "$f" && RC_SHUT=1 "$f" stop
 	done
 fi
-echo ": Purging /var/log/rc"
-rm -f /var/log/rc/*
