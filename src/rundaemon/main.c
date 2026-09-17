@@ -18,10 +18,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <syslog.h>
+#include <errno.h>
 
 int main(int argc, char *argv[]) {
+	int err;
+	openlog("rundaemon", LOG_PID | LOG_CONS | FD_CLOEXEC, LOG_DAEMON);
 	if (argc < 3) {
 		fprintf(stderr, "NOT ENOUGH ARGUMENTS\n");
 		fprintf(stderr, "Usage: %s <pidfile> <command> [cmd_args]\n", argv[0]);
@@ -30,23 +35,33 @@ int main(int argc, char *argv[]) {
 
 	pid_t child1 = fork();
 	if (child1 < 0) {
-		perror("rundaemon: child1 fork failed");
+		err = errno;
+		syslog(LOG_ERR, "child1 fork failed: %s", strerror(err));
+		fprintf(stderr, "rundaemon: child1 fork failed: %s\n", strerror(err));
+		closelog();
 		return 1;
 	} else if (child1 > 0)
 		waitpid(child1, NULL, 0);
 	else {
 		pid_t sid = setsid();
 		if (sid < 0) {
-			perror("rundaemon: child1 setsid failed");
+			err = errno;
+			syslog(LOG_ERR, "child1 setsid failed: %s", strerror(err));
+			fprintf(stderr, "rundaemon: child1 setsid failed: %s\n", strerror(err));
+			closelog();
 			_exit(2);
 		}
 		pid_t child2 = fork();
 		if (child2 < 0) {
-			perror("rundaemon: child2 fork failed");
+			err = errno;
+			syslog(LOG_ERR, "child2 fork failed: %s", strerror(err));
+			fprintf(stderr, "rundaemon: child2 fork failed: %s\n", strerror(err));
+			closelog();
 			_exit(3);
-		} else if (child2 > 0)
+		} else if (child2 > 0) {
+			closelog();
 			_exit(0);
-		else {
+		} else {
 			int pidFile = open(
 				argv[1],
 				O_RDWR |
@@ -58,7 +73,10 @@ int main(int argc, char *argv[]) {
 				S_IROTH
 			);
 			if (pidFile < 0) {
-				perror("rundaemon: unable to create pidfile");
+				err = errno;
+				syslog(LOG_ERR, "unable to create pidfile: %s", strerror(err));
+				fprintf(stderr, "rundaemon: unable to create pidfile: %s\n", strerror(err));
+				closelog();
 				_exit(4);
 			}
 			dprintf(pidFile,"%d\n", (int) getpid());
@@ -75,9 +93,13 @@ int main(int argc, char *argv[]) {
 				if (fd > STDERR_FILENO)
 					close(fd);
 			}
+			syslog(LOG_INFO, "Running %s as PID %d", newArgv[0], getpid());
 			execvp(newArgv[0], newArgv);
-			perror("rundaemon: child2 execvp failed");
+			err = errno;
+			syslog(LOG_ERR, "child2 execvp failed: %s", strerror(err));
+			fprintf(stderr, "rundaemon: child2 execvp failed: %s\n", strerror(err));
 			unlink(argv[1]);
+			closelog();
 			_exit(1);
 		}
 	}
