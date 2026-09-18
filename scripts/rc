@@ -23,8 +23,10 @@ if test $? -ne 0; then
 	exit 1
 fi
 for f in $order; do
-	test -x "$f" && RC_BOOT=1 "$f" start
-	if test "$?" -ne 0; then
-		exit 1
+	if test -x "$f"; then 
+		RC_BOOT=1 "$f" start
+		if test "$?" -ne 0; then
+			exit 1
+		fi
 	fi
 done

@@ -26,55 +26,51 @@ for f in "$@"; do
         requires=$(awk -F': *' '/^# REQUIRES:/{print $2}' "$f")
         before=$(awk -F': *' '/^# BEFORE:/{print $2}' "$f")
         echo "$f|${provides:-$f}|${requires}|${before}"
-done | python3 -c '
-import sys
-
-lines = [line.rstrip("\n").split("|") for line in sys.stdin]
-
-nodes = []
-provides = {}
-deps = {}
-
-for f, prov, req, bef in lines:
-        for p in prov.split():
-                provides[p.strip()] = f
-        nodes.append(f)
-
-for f, prov, req, bef in lines:
-        deps.setdefault(f, [])
-        deps[f] += [r.strip() for r in req.split() if r.strip() != "none"]
-        for b in bef.split():
-                b = b.strip()
-                if not b:
-                        continue
-                target_file = provides.get(b)
-                if target_file is None:
-                        continue
-                own_name = prov.strip() if prov.strip() else f
-                deps.setdefault(target_file, [])
-                deps[target_file].append(own_name)
-
-seen = set()
-stack = set()
-order = []
-
-def visit(n):
-        if n in seen:
-                return
-        if n in stack:
-                sys.stderr.write(f"rcorder: circular dependency at {n}\n")
-                sys.exit(1)
-        stack.add(n)
-        for r in deps.get(n, []):
-                target = provides.get(r)
-                if target is None:
-                        continue
-                visit(target)
-        stack.discard(n)
-        seen.add(n)
-        order.append(n)
-
-for n in nodes:
-        visit(n)
-print("\n".join(order))
+done | awk -F'|' '
+{
+	n++
+	file[n] = $1
+	prov[n] = $2
+	req[n]  = $3
+	bef[n]  = $4
+}
+END {
+	for (i = 1; i <= n; i++) {
+		pc = split(prov[i], parr, " ")
+		for (k = 1; k <= pc; k++) provides[parr[k]] = file[i]
+	}
+	for (i = 1; i <= n; i++) {
+		f = file[i]
+		rc = split(req[i], rarr, " ")
+		for (k = 1; k <= rc; k++)
+			if (rarr[k] != "none") deps[f] = deps[f] " " rarr[k]
+		bc = split(bef[i], barr, " ")
+		for (k = 1; k <= bc; k++) {
+			target = provides[barr[k]]
+			if (target == "") continue
+			ownname = (prov[i] != "" ? prov[i] : f)
+			deps[target] = deps[target] " " ownname
+		}
+	}
+	for (i = 1; i <= n; i++) visit(file[i])
+	for (i = 1; i <= oc; i++) print olist[i]
+}
+function visit(node, dc, darr, k, target) {
+	if (node in seen) return
+	if (node in instack) {
+		printf "rcorder: circular dependency at %s\n", node > "/dev/stderr"
+		exit 1
+	}
+	instack[node] = 1
+	dc = split(deps[node], darr, " ")
+	for (k = 1; k <= dc; k++) {
+		target = provides[darr[k]]
+		if (target == "") continue
+		visit(target)
+	}
+	delete instack[node]
+	seen[node] = 1
+	oc++
+	olist[oc] = node
+}
 '
