@@ -43,7 +43,7 @@ get_rc_meta() {
 }
 
 is_running() {
-	test -n "$pidfile" && test -f "$pidfile" && pgrep -f -F "$pidfile" "$name" 2> /dev/null
+	test -n "$pidfile" && test -f "$pidfile" && pgrep -f -F "$pidfile" "$name" > /dev/null 2>&1
 }
 
 default_stop_cmd() {
@@ -89,6 +89,8 @@ run_rc_command() {
 				test -n "$start_msg" \
 					&& echo "${start_msg}" \
 					|| echo "/ Starting $name"
+				test -e /sys/fs/cgroup/cgroup.procs \
+					&& echo 0 > /sys/fs/cgroup/cgroup.procs
 				eval "$cmd $cmd_args"
 				rc=$?
 				ATTEMPTS=5
