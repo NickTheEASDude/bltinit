@@ -66,6 +66,8 @@ int main(int argc, char *argv[]) {
 				argv[1],
 				O_RDWR |
 				O_CREAT |
+				O_EXCL |
+				O_NOFOLLOW |
 				O_TRUNC,
 				S_IRUSR |
 				S_IWUSR |

@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <linux/reboot.h>
 #include <sys/reboot.h>
+#include <syslog.h>
 
 volatile sig_atomic_t reaped = ACTION_NORMAL;
 volatile sig_atomic_t stopsys_condition = ACTION_NORMAL;
@@ -75,16 +76,20 @@ multiSkip:
 				consoleExit(reapPID);
 		}
 		if (stopsys_condition != ACTION_NORMAL) {
+			openlog("init", LOG_PID | LOG_CONS, LOG_DAEMON);
 			if (stopsys_condition == ACTION_REBOOT) {
 				broadcast("Now rebooting system\n");
+				syslog(LOG_ALERT, "ALERT! System going down for reboot.");
 				stopServices();
 				execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", "reboot", (char *) NULL);
 			} else if (stopsys_condition == ACTION_HALT) {
 				broadcast("Now halting system\n");
+				syslog(LOG_ALERT, "ALERT! System going down for halt.");
 				stopServices();
 				execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", "halt", (char *) NULL);
 			} else if (stopsys_condition == ACTION_POWEROFF) {
 				broadcast("Now shutting down system\n");
+				syslog(LOG_ALERT, "ALERT! System going down for poweroff.");
 				stopServices();
 				execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", "shutdown", (char *) NULL);
 			}

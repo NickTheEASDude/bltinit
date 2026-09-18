@@ -43,7 +43,7 @@ get_rc_meta() {
 }
 
 is_running() {
-	test -n "$pidfile" && test -f "$pidfile" && pgrep --quiet -F "$pidfile" "$name" 2> /dev/null
+	test -n "$pidfile" && test -f "$pidfile" && pgrep -f -F "$pidfile" "$name" 2> /dev/null
 }
 
 default_stop_cmd() {
