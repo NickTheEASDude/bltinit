@@ -44,7 +44,7 @@ retry:
 		else
 			return false;
 	} else {
-		execl("bin/sh", "/bin/sh", "/etc/rc", (char *) NULL);
+		execl("/bin/sh", "/bin/sh", "/etc/rc", (char *) NULL);
 		perror("init: rc execl failed");
 		_exit(1);
 	}

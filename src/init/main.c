@@ -49,7 +49,15 @@ int main(int argc, char *argv[]) {
 		write(STDERR_FILENO, "This program must be run as PID 1 (init)\n", 41);
 		return 1;
 	}
+	struct sigaction sa;
+	sa.sa_handler = handleSignals;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 	if (argc > 1 && strcmp(argv[1], "stopsys") == 0) {
+		sa.sa_handler = SIG_IGN;
 		if (argc > 2) {
 			if (strcmp(argv[2], "reboot") == 0)
 				stopsys_condition = ACTION_REBOOT;
@@ -60,19 +68,11 @@ int main(int argc, char *argv[]) {
 		}
 		goto stopsys;
 	}
+	sigaction(SIGCHLD, &sa, NULL);
 	setupConsole();
 #ifdef __linux__
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
 #endif
-	struct sigaction sa;
-	sa.sa_handler = handleSignals;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGUSR2, &sa, NULL);
-	sigaction(SIGCHLD, &sa, NULL);
-	
 	if (startServices() == false) {
 		broadcast("FATAL: /etc/rc exited abnormally, launching /bin/sh on primary console\n");
 		loadConsoles("/usr/lib/rc/rc.fallback");
@@ -113,6 +113,7 @@ multiSkip:
 			closelog();
 			execl(argv[0], argv[0], "stopsys", stopType, NULL);
 		stopsys:
+
 			stopServices();
 			stage2stopsys();
 			kstop(stopsys_condition);
