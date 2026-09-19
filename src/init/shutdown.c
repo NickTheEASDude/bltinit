@@ -66,14 +66,6 @@ retry:
 				continue;
 			}
 		}
-		write(STDOUT_FILENO, ": Final sync\n", 13);
-		sync();
-		write(STDOUT_FILENO, ": Remounting / as read-only\n", 28);
-		int attempts;
-		for (attempts = 5; attempts > 0 && REMOUNT != 0; attempts--)
-			ksleep(1);
-		if (attempts == 0)
-			write(STDERR_FILENO, "FAIL: / didn't remount succesfully. Continuing\n", 47);
 	} else {
 		execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", (char *) NULL);
 		perror("init: stage2stopsys execl failed");
@@ -85,26 +77,40 @@ retry:
 #if defined(__linux__)
 # include <sys/reboot.h>
 # include <linux/reboot.h>
-# define ENABLE_CAD reboot(LINUX_REBOOT_CMD_CAD_ON)
-# define HALT reboot(LINUX_REBOOT_CMD_HALT)
-# define REBOOT reboot(LINUX_REBOOT_CMD_RESTART)
-# define POWEROFF reboot(LINUX_REBOOT_CMD_POWER_OFF)
+# define ENABLE_CAD() reboot(LINUX_REBOOT_CMD_CAD_ON)
+# define HALT() reboot(LINUX_REBOOT_CMD_HALT)
+# define REBOOT() reboot(LINUX_REBOOT_CMD_RESTART)
+# define POWEROFF() reboot(LINUX_REBOOT_CMD_POWER_OFF)
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+# include <sys/reboot.h>
+# define ENABLE_CAD() ((void) 0)
+# ifdef __FreeBSD__
+#  define HALT() reboot(RB_HALT)
+#  define REBOOT() reboot(RB_AUTOBOOT)
+#  define POWEROFF() reboot(RB_POWEROFF)
+# else
+#  define HALT() reboot(RB_HALT, NULL)
+#  define REBOOT() reboot(RB_AUTOBOOT, NULL)
+#  define POWEROFF() reboot(RB_POWEROFF, NULL)
+# endif
+#else
+# error("Unsupported OS!")
 #endif
-	ENABLE_CAD;
+	ENABLE_CAD();
 	if (action == ACTION_REBOOT) {
 		write(STDOUT_FILENO, "Now rebooting system\n", 21);
-		REBOOT;
+		REBOOT();
 	} else if (action == ACTION_HALT) {
 		write(STDOUT_FILENO, "Now halting system\n", 19);
-		HALT;
+		HALT();
 	} else if (action == ACTION_POWEROFF) {
 		write(STDOUT_FILENO, "Now shutting down system\n", 25);
-		POWEROFF;
+		POWEROFF();
 	}
 	write(STDERR_FILENO, "Either the reboot/halt/poweroff call failed,\n", 45);
 	write(STDERR_FILENO, "or the option wasn't specified correctly.\n", 42);
 	write(STDERR_FILENO, "Either way, going into infinite loop. Treat as a halt.\n", 55);
-	HALT;
+	HALT();
 infloop:
 	for(;;)
 		pause();

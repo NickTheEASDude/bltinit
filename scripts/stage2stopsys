@@ -16,20 +16,62 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+
+# This function was written by AI, and the author has yet to be able to fully test it due to ongoing portability struggles.
+# USE AT YOUR OWN RISK!
+findMounts() {
+	if test -r /proc/mounts; then
+		# Linux
+		awk '{print $2}' /proc/mounts
+	elif test -r /etc/mnttab; then
+		# Solaris/Illumos
+		awk -F'\t' '{print $2}' /etc/mnttab
+	else
+		# BSDs
+		mount | sed -n 's/^.* on \(.*\) (.*)$/\1/p'
+	fi
+}
 if test $PPID -ne 1; then
 	echo "This program must be directly invoked by init." >&2
 	exit 1
 fi
+
 echo ": Syncing disks"
 sync
 echo ": Unmounting filesystems"
-awk '{print $2}' /proc/mounts | sort -r | while read -r mntPath; do
+findMounts | awk '{print gsub(/\//,"/"), $0}' | sort -rn -k1,1 | cut -d' ' -f2- | while read -r mntPath; do
 	case $mntPath in
-		"/"|"/proc"|"/sys"|"/dev"|"/dev/"*)
+		/ | /run | /proc | /sys | /dev | /dev/*)
 			continue
 			;;
 		*)
-			umount $mntPath
+			ATTEMPTS=5
+			while test "$ATTEMPTS" -gt 0; do
+				umount "$mntPath" 2> /dev/null
+				if test "$?" -eq 0; then
+					break
+				fi
+				sleep 1
+				ATTEMPTS=$((ATTEMPTS-1))
+			done
+			if test "$ATTEMPTS" -eq 0; then
+				echo >&2 "WARNING: $mntPath failed to unmount. This might have implications..."
+			fi
 			;;
 	esac
 done
+echo ": Final sync"
+sync
+echo ": Remounting / as read-only"
+ATTEMPTS=5
+while test "$ATTEMPTS" -gt 0; do
+	mount -o remount,ro / 2> /dev/null
+	if test "$?" -eq 0; then
+		break
+	fi
+	ATTEMPTS=$((ATTEMPTS-1))
+done
+if test "$ATTEMPTS" -eq 0; then
+	echo >&2 "FAIL: / didn't remount successfully. Continuing"
+fi
