@@ -18,12 +18,16 @@
 #include "tty.h"
 #include "rc.h"
 #include "action.h"
+#include "shutdown.h"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <linux/reboot.h>
-#include <sys/reboot.h>
 #include <syslog.h>
+
+#ifdef __linux__
+# include <sys/reboot.h>
+# include <linux/reboot.h>
+#endif
 
 volatile sig_atomic_t reaped = ACTION_NORMAL;
 volatile sig_atomic_t stopsys_condition = ACTION_NORMAL;
@@ -32,9 +36,9 @@ void handleSignals(int sig) {
 	if (sig == SIGINT)
 		stopsys_condition = ACTION_REBOOT;
 	else if (sig == SIGUSR1)
-		stopsys_condition = ACTION_HALT;
-	else if (sig == SIGTERM)
 		stopsys_condition = ACTION_POWEROFF;
+	else if (sig == SIGUSR2)
+		stopsys_condition = ACTION_HALT;
 	else if (sig == SIGCHLD)
 		reaped = ACTION_REAP;
 }
@@ -44,14 +48,16 @@ int main(int argc, char *argv[]) {
 		write(STDERR_FILENO, "This program must be run as PID 1 (init)\n", 41);
 		return 1;
 	}
+#ifdef __linux__
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
+#endif
 	struct sigaction sa;
 	sa.sa_handler = handleSignals;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	
 	if (startServices() == false) {
@@ -80,19 +86,17 @@ multiSkip:
 			if (stopsys_condition == ACTION_REBOOT) {
 				broadcast("Now rebooting system\n");
 				syslog(LOG_ALERT, "ALERT! System going down for reboot.");
-				stopServices();
-				execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", "reboot", (char *) NULL);
 			} else if (stopsys_condition == ACTION_HALT) {
 				broadcast("Now halting system\n");
 				syslog(LOG_ALERT, "ALERT! System going down for halt.");
-				stopServices();
-				execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", "halt", (char *) NULL);
 			} else if (stopsys_condition == ACTION_POWEROFF) {
 				broadcast("Now shutting down system\n");
 				syslog(LOG_ALERT, "ALERT! System going down for poweroff.");
-				stopServices();
-				execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", "shutdown", (char *) NULL);
 			}
+			closelog();
+			stopServices();
+			stage2stopsys();
+			kstop(stopsys_condition);
 		}
 	}
 	return 1;

@@ -1,5 +1,5 @@
 executable(
-  'init', 'init/main.c', 'init/rc.c', 'init/tty.c',
+  'init', 'init/main.c', 'init/rc.c', 'init/tty.c', 'init/shutdown.c',
   include_directories: includes,
   install: true,
   install_dir: get_option('sbindir')
@@ -11,10 +11,11 @@ executable(
   install: true,
   install_dir: get_option('sbindir')
 )
-
+'''
 executable(
   'stage3stopsys', 'stage3stopsys/main.c',
   include_directories: includes,
   install: true,
   install_dir: get_option('libexecdir')
 )
+'''

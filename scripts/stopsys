@@ -25,29 +25,29 @@ if test $$ -ne 1; then
 	case $1 in
 		"halt")
 			wall -n "ALERT! System going down for halt NOW!"
-			kill -10 1
+			kill -s USR2 1
 			;;
 		"shutdown")
 			wall -n "ALERT! System going down for shutdown NOW!"
-			kill -15 1
+			kill -s USR1 1
 			;;
 		"reboot")
 			wall -n "ALERT! System going down for reboot NOW!"
-			kill -2 1
+			kill -s INT 1
 			;;
 	esac
 	case $0 in
 		*"halt")
 			wall -n "ALERT! System going down for halt NOW!"
-			kill -10 1
+			kill -s USR2 1
 			;;
 		*"shutdown"|*"poweroff")
 			wall -n "ALERT! System going down for shutdown NOW!"
-			kill -15 1
+			kill -s USR1 1
 			;;
 		*"reboot")
 			wall -n "ALERT! System going down for reboot NOW!"
-			kill -2 1
+			kill -s INT 1
 			;;
 	esac
 fi

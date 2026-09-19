@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <stdbool.h>
 
-bool startServices() {
+bool startServices(void) {
 retry:
 	pid_t services = fork();
 	if (services < 0) {
@@ -50,7 +50,7 @@ retry:
 	}
 }
 
-void stopServices() {
+void stopServices(void) {
 retry:
 	pid_t services = fork();
 	if (services < 0) {

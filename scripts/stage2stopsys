@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if test $$ -ne 1; then
-	echo "This program must be run as a continuation of init." >&2
+if test $PPID -ne 1; then
+	echo "This program must be directly invoked by init." >&2
 	exit 1
 fi
 echo ": Sending SIGTERM to all processes"
-kill -15 -1
+kill -s TERM -- -1
 sleep 3
 echo ": Sending SIGKILL to remaining processes"
-kill -9 -1
+kill -s KILL -- -1
 echo ": Syncing disks"
 sync
 echo ": Unmounting filesystems"
@@ -42,4 +42,3 @@ echo ": Final sync"
 sync
 echo ": Remounting / as read-only"
 mount -o remount,ro /
-exec /usr/libexec/stage3stopsys $@
