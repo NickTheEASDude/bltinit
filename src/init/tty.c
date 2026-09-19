@@ -37,7 +37,7 @@ int nConsoles = 0;
 void broadcast(const char *restrict format, ...) {
 	va_list args;
 	va_start(args, format);
-	vprintf(format, args);
+	vdprintf(STDOUT_FILENO, format, args);
 	va_end(args);
 }
 

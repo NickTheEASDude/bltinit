@@ -20,11 +20,6 @@ if test $PPID -ne 1; then
 	echo "This program must be directly invoked by init." >&2
 	exit 1
 fi
-echo ": Sending SIGTERM to all processes"
-kill -s TERM -- -1
-sleep 3
-echo ": Sending SIGKILL to remaining processes"
-kill -s KILL -- -1
 echo ": Syncing disks"
 sync
 echo ": Unmounting filesystems"
@@ -38,7 +33,3 @@ awk '{print $2}' /proc/mounts | sort -r | while read -r mntPath; do
 			;;
 	esac
 done
-echo ": Final sync"
-sync
-echo ": Remounting / as read-only"
-mount -o remount,ro /

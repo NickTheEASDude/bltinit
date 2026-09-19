@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <syslog.h>
+#include <string.h>
 
 #ifdef __linux__
 # include <sys/reboot.h>
@@ -47,6 +48,17 @@ int main(int argc, char *argv[]) {
 	if (getpid() != 1) {
 		write(STDERR_FILENO, "This program must be run as PID 1 (init)\n", 41);
 		return 1;
+	}
+	if (argc > 1 && strcmp(argv[1], "stopsys") == 0) {
+		if (argc > 2) {
+			if (strcmp(argv[2], "reboot") == 0)
+				stopsys_condition = ACTION_REBOOT;
+			else if (strcmp(argv[2], "poweroff") == 0)
+				stopsys_condition = ACTION_POWEROFF;
+			else if (strcmp(argv[2], "halt") == 0)
+				stopsys_condition = ACTION_HALT;
+		}
+		goto stopsys;
 	}
 #ifdef __linux__
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
@@ -82,18 +94,24 @@ multiSkip:
 				consoleExit(reapPID);
 		}
 		if (stopsys_condition != ACTION_NORMAL) {
+			char *stopType = "";
 			openlog("init", LOG_PID | LOG_CONS, LOG_DAEMON);
 			if (stopsys_condition == ACTION_REBOOT) {
 				broadcast("Now rebooting system\n");
 				syslog(LOG_ALERT, "ALERT! System going down for reboot.");
+				stopType = "reboot";
 			} else if (stopsys_condition == ACTION_HALT) {
 				broadcast("Now halting system\n");
 				syslog(LOG_ALERT, "ALERT! System going down for halt.");
+				stopType = "halt";
 			} else if (stopsys_condition == ACTION_POWEROFF) {
 				broadcast("Now shutting down system\n");
 				syslog(LOG_ALERT, "ALERT! System going down for poweroff.");
+				stopType = "poweroff";
 			}
 			closelog();
+			execl(argv[0], argv[0], "stopsys", stopType, NULL);
+		stopsys:
 			stopServices();
 			stage2stopsys();
 			kstop(stopsys_condition);

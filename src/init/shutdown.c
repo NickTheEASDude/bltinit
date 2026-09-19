@@ -21,10 +21,37 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/mount.h>
+#include <fcntl.h>
 #include <err.h>
 #include <errno.h>
+#include <time.h>
 
+static inline void ksleep(unsigned int seconds) {
+	struct timespec req, rem;
+	req.tv_sec = seconds;
+	req.tv_nsec = 0;
+	while (nanosleep(&req, &rem) == -1 && errno == EINTR) {
+		req = rem;
+	}
+}
 void stage2stopsys(void) {
+#if defined(__linux__)
+# define REMOUNT mount(NULL, "/", NULL, MS_REMOUNT | MS_RDONLY, NULL)
+#endif
+	write(STDOUT_FILENO, ": Sending SIGTERM to all processes\n", 35);
+	kill(-1, SIGTERM);
+	ksleep(3);
+	write(STDOUT_FILENO, ": Sending SIGKILL to remaining processes\n", 41);
+	kill(-1, SIGKILL);
+	for (;;) {
+		pid_t reaped = waitpid(-1, NULL, 0);
+		if (reaped < 0) {
+			if (errno == ECHILD)
+				break;
+			continue;
+		}
+	}
 retry:
 	pid_t stage2 = fork();
 	if (stage2 < 0) {
@@ -39,6 +66,14 @@ retry:
 				continue;
 			}
 		}
+		write(STDOUT_FILENO, ": Final sync\n", 13);
+		sync();
+		write(STDOUT_FILENO, ": Remounting / as read-only\n", 28);
+		int attempts;
+		for (attempts = 5; attempts > 0 && REMOUNT != 0; attempts--)
+			ksleep(1);
+		if (attempts == 0)
+			write(STDERR_FILENO, "FAIL: / didn't remount succesfully. Continuing\n", 47);
 	} else {
 		execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", (char *) NULL);
 		perror("init: stage2stopsys execl failed");
