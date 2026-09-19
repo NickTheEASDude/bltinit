@@ -33,7 +33,7 @@ retry:
 	} else if (stage2 > 0) {
 		pid_t reapedStage2;
 		while ((reapedStage2 = waitpid(-1, NULL, 0)) != stage2) {
-			if (stage2 < 0) {
+			if (reapedStage2 < 0) {
 				if (errno == ECHILD)
 					break;
 				continue;

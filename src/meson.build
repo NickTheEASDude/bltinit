@@ -11,11 +11,3 @@ executable(
   install: true,
   install_dir: get_option('sbindir')
 )
-'''
-executable(
-  'stage3stopsys', 'stage3stopsys/main.c',
-  include_directories: includes,
-  install: true,
-  install_dir: get_option('libexecdir')
-)
-'''
