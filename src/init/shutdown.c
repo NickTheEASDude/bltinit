@@ -36,9 +36,6 @@ static inline void ksleep(unsigned int seconds) {
 	}
 }
 void stage2stopsys(void) {
-#if defined(__linux__)
-# define REMOUNT mount(NULL, "/", NULL, MS_REMOUNT | MS_RDONLY, NULL)
-#endif
 	write(STDOUT_FILENO, ": Sending SIGTERM to all processes\n", 35);
 	kill(-1, SIGTERM);
 	ksleep(3);
@@ -67,7 +64,11 @@ retry:
 			}
 		}
 	} else {
-		execl("/usr/libexec/stage2stopsys", "/usr/libexec/stage2stopsys", (char *) NULL);
+#ifdef __linux__
+		execl("/bin/sh", "/bin/sh", "/usr/libexec/stage2stopsys", "linux", (char *) NULL);
+#else
+		execl("/bin/sh", "/bin/sh", "/usr/libexec/stage2stopsys", (char *) NULL);
+#endif
 		perror("init: stage2stopsys execl failed");
 		_exit(1);
 	}

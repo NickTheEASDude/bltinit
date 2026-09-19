@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
 		}
 		goto stopsys;
 	}
+	setupConsole();
 #ifdef __linux__
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
 #endif

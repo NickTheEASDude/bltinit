@@ -33,7 +33,15 @@
 
 console_t consoles[MAX_CONSOLES];
 int nConsoles = 0;
-
+void setupConsole(void) {
+	int fd = open("/dev/console", O_RDWR);
+	if (fd >= 0) {
+		dup2(fd, STDIN_FILENO);
+		dup2(fd, STDOUT_FILENO);
+		dup2(fd, STDERR_FILENO);
+		if (fd > STDERR_FILENO) close(fd);
+	}
+}
 void broadcast(const char *restrict format, ...) {
 	va_list args;
 	va_start(args, format);

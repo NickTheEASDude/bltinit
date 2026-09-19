@@ -63,15 +63,17 @@ findMounts | awk '{print gsub(/\//,"/"), $0}' | sort -rn -k1,1 | cut -d' ' -f2- 
 done
 echo ": Final sync"
 sync
-echo ": Remounting / as read-only"
-ATTEMPTS=5
-while test "$ATTEMPTS" -gt 0; do
-	mount -o remount,ro / 2> /dev/null
-	if test "$?" -eq 0; then
-		break
+if test "$1" = "linux"; then
+	echo ": Remounting / as read-only"
+	ATTEMPTS=5
+	while test "$ATTEMPTS" -gt 0; do
+		mount -o remount,ro / 2> /dev/null
+		if test "$?" -eq 0; then
+			break
+		fi
+		ATTEMPTS=$((ATTEMPTS-1))
+	done
+	if test "$ATTEMPTS" -eq 0; then
+		echo >&2 "FAIL: / didn't remount successfully. Continuing"
 	fi
-	ATTEMPTS=$((ATTEMPTS-1))
-done
-if test "$ATTEMPTS" -eq 0; then
-	echo >&2 "FAIL: / didn't remount successfully. Continuing"
 fi

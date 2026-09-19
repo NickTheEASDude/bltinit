@@ -44,7 +44,7 @@ retry:
 		else
 			return false;
 	} else {
-		execl("/etc/rc", "/etc/rc", (char *) NULL);
+		execl("bin/sh", "/bin/sh", "/etc/rc", (char *) NULL);
 		perror("init: rc execl failed");
 		_exit(1);
 	}
@@ -66,7 +66,7 @@ retry:
 			}
 		}
 	} else {
-		execl("/etc/rc.shutdown", "/etc/rc.shutdown", (char *) NULL);
+		execl("/bin/sh", "/bin/sh", "/etc/rc.shutdown", (char *) NULL);
 		perror("init: rc.shutdown execl failed");
 		_exit(1);
 	}

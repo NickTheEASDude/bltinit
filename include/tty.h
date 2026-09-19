@@ -39,4 +39,5 @@ bool execGetty(console_t *c);
 void spawnConsoles(void);
 void consoleExit(pid_t reapPID);
 void broadcast(const char *restrict format, ...);
+void setupConsole(void);
 #endif

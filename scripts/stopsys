@@ -24,15 +24,15 @@ fi
 if test $$ -ne 1; then
 	case $1 in
 		"halt")
-			wall -n "ALERT! System going down for halt NOW!"
+			echo "ALERT! System going down for halt NOW!" | wall -n
 			kill -s USR2 1
 			;;
 		"shutdown")
-			wall -n "ALERT! System going down for shutdown NOW!"
+			echo "ALERT! System going down for shutdown NOW!" | wall -n
 			kill -s USR1 1
 			;;
 		"reboot")
-			wall -n "ALERT! System going down for reboot NOW!"
+			echo "ALERT! System going down for reboot NOW!" | wall -n
 			kill -s INT 1
 			;;
 	esac
