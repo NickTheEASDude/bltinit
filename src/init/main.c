@@ -56,8 +56,12 @@ int main(int argc, char *argv[]) {
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
+	sigaction(SIGCHLD, &sa, NULL);
 	if (argc > 1 && strcmp(argv[1], "stopsys") == 0) {
 		sa.sa_handler = SIG_IGN;
+		sigaction(SIGINT, &sa, NULL);
+		sigaction(SIGUSR1, &sa, NULL);
+		sigaction(SIGUSR2, &sa, NULL);
 		if (argc > 2) {
 			if (strcmp(argv[2], "reboot") == 0)
 				stopsys_condition = ACTION_REBOOT;
@@ -68,7 +72,6 @@ int main(int argc, char *argv[]) {
 		}
 		goto stopsys;
 	}
-	sigaction(SIGCHLD, &sa, NULL);
 	setupConsole();
 #ifdef __linux__
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
