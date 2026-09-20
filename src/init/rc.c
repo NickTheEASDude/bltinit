@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "scripts.h"
 #include "rc.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -44,7 +45,7 @@ retry:
 		else
 			return false;
 	} else {
-		execl("/bin/sh", "/bin/sh", "/etc/rc", (char *) NULL);
+		execl("/bin/sh", "/bin/sh", RC, (char *) NULL);
 		perror("init: rc execl failed");
 		_exit(1);
 	}
@@ -66,7 +67,7 @@ retry:
 			}
 		}
 	} else {
-		execl("/bin/sh", "/bin/sh", "/etc/rc.shutdown", (char *) NULL);
+		execl("/bin/sh", "/bin/sh", RC_SHUT, (char *) NULL);
 		perror("init: rc.shutdown execl failed");
 		_exit(1);
 	}

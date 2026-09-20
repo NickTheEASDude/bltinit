@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "scripts.h"
 #include "shutdown.h"
 #include "action.h"
 #include <signal.h>
@@ -65,9 +66,9 @@ retry:
 		}
 	} else {
 #ifdef __linux__
-		execl("/bin/sh", "/bin/sh", "/usr/libexec/stage2stopsys", "linux", (char *) NULL);
+		execl("/bin/sh", "/bin/sh", S2_STOPSYS, "linux", (char *) NULL);
 #else
-		execl("/bin/sh", "/bin/sh", "/usr/libexec/stage2stopsys", (char *) NULL);
+		execl("/bin/sh", "/bin/sh", S2_STOPSYS, (char *) NULL);
 #endif
 		perror("init: stage2stopsys execl failed");
 		_exit(1);

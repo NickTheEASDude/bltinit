@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "scripts.h"
 #include "tty.h"
 #include "rc.h"
 #include "action.h"
@@ -77,15 +78,15 @@ int main(int argc, char *argv[]) {
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
 #endif
 	if (startServices() == false) {
-		broadcast("FATAL: /etc/rc exited abnormally, launching /bin/sh on primary console\n");
-		loadConsoles("/usr/lib/rc/rc.fallback");
+		broadcast("FATAL: rc exited abnormally, launching /bin/sh on primary console\n");
+		loadConsoles(RC_FALL);
 		goto multiSkip;
 	}
 	broadcast("Spawning consoles\n");
-	if (loadConsoles("/etc/rc.consoles") <= 0) {
+	if (loadConsoles(RC_CONS) <= 0) {
 		broadcast("ERROR: rc.consoles empty, launching /bin/sh on primary console\n");
 		
-		loadConsoles("/usr/lib/rc/rc.fallback");
+		loadConsoles(RC_FALL);
 	}
 multiSkip:
 	spawnConsoles();
