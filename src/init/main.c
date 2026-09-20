@@ -116,8 +116,8 @@ multiSkip:
 			}
 			closelog();
 			execl(argv[0], argv[0], "stopsys", stopType, NULL);
+			
 		stopsys:
-
 			stopServices();
 			stage2stopsys();
 			kstop(stopsys_condition);
