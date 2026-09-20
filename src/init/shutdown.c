@@ -92,7 +92,7 @@ retry:
 # else
 #  define HALT() reboot(RB_HALT, NULL)
 #  define REBOOT() reboot(RB_AUTOBOOT, NULL)
-#  define POWEROFF() reboot(RB_POWEROFF, NULL)
+#  define POWEROFF() reboot(RB_POWERDOWN, NULL)
 # endif
 #else
 # error("Unsupported OS!")

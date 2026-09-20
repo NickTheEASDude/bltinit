@@ -42,7 +42,7 @@ sync
 echo ": Unmounting filesystems"
 findMounts | awk '{print gsub(/\//,"/"), $0}' | sort -rn -k1,1 | cut -d' ' -f2- | while read -r mntPath; do
 	case $mntPath in
-		/ | /run | /proc | /sys | /dev | /dev/*)
+		/ | /run | /proc | /sys | /dev | /dev/* | /kern)
 			continue
 			;;
 		*)
