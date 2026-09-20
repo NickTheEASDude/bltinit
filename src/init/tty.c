@@ -30,6 +30,8 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <stdbool.h>
 
 console_t consoles[MAX_CONSOLES];
 int nConsoles = 0;
@@ -57,7 +59,18 @@ void addConsole(console_t console) {
 	consoles[nConsoles] = console;
 	nConsoles++;
 }
-
+static bool ttyExists(const char *path) {
+	struct stat st;
+	if (stat(path, &st) != 0)
+		return false;
+	
+	if (!S_ISCHR(st.st_mode))
+		return false;
+	else if (access(path, R_OK | W_OK) != 0)
+		return false;
+	else
+		return true;
+}
 int loadConsoles(const char *path) {
 	FILE *f = fopen(path, "r");
 	if (!f) return -1;
@@ -71,10 +84,10 @@ int loadConsoles(const char *path) {
 		while (isspace((unsigned char)*p)) p++;
 		if (*p == '\0' || *p == '#') continue;
 
-		char device[64], isGetty[8], modeStr[8], prog[512];
+		char device[64], enabled[8], modeStr[8], prog[512];
 
 		int matched = sscanf(p, "%63[^;];%7[^;];%7[^;];%511[^\n]",
-			device, isGetty, modeStr, prog);
+			device, enabled, modeStr, prog);
 		if (matched != 4) {
 			broadcast("rc.consoles: malformed line %s, skipping\n", p);
 			continue;
@@ -84,15 +97,21 @@ int loadConsoles(const char *path) {
 		memset(c, 0, sizeof(*c));
 		snprintf(c->device, sizeof(c->device), "%s", device);
 		if (
-			isGetty[0] == 'X' ||
-			isGetty[0] == 'x' ||
-			isGetty[0] == 'G' ||
-			isGetty[0] == 'g'
-		) snprintf(c->isGetty, sizeof(c->isGetty), "%s", isGetty);
+			enabled[0] == 'Y' ||
+			enabled[0] == 'y' ||
+			enabled[0] == 'E' ||
+			enabled[0] == 'e' ||
+			enabled[0] == 'N' ||
+			enabled[0] == 'n'
+		) snprintf(c->enabled, sizeof(c->enabled), "%s", enabled);
 		else {
 			broadcast("rc.consoles: line %s column 2 incorrect, skipping\n", p);
 			continue;
 		}
+		if (c->enabled[0] == 'E' || c->enabled[0] == 'e') {
+			if (!ttyExists(c->device)) continue;
+		} else if (c->enabled[0] == 'N' || c->enabled[0] == 'n')
+			continue;
 		c->mode = (modeStr[0] == 'R' || modeStr[0] == 'r')
 			    ? SPAWN_REPEAT :
 			    (modeStr[0] == 'S' || modeStr[0] == 's')
@@ -139,11 +158,6 @@ bool execGetty(console_t *c) {
 		char *tokPtr;
 		for (char *tok = strtok_r(prog, " ", &tokPtr); tok != NULL; tok = strtok_r(NULL, " ", &tokPtr)) args[count++] = tok;
 		args[count] = NULL;
-		if (strcmp(c->isGetty, "G") == 0 || strcmp(c->isGetty, "g") == 0) {
-			execv(args[0], args);
-			perror("init: console execv failed");
-			_exit(1);
-		}
 		int fd = open(c->device, O_RDWR | O_NOCTTY);
 		if (fd < 0) {
 			perror("init: console open failed");

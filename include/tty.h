@@ -27,7 +27,7 @@
 typedef enum { SPAWN_ONCE, SPAWN_REPEAT, SPAWN_ASK, SPAWN_ERR } smode_t;
 typedef struct {
         char      device[64];
-        char      isGetty[8];
+        char      enabled[8];
         smode_t   mode;
         char      prog[512];
         pid_t     pid;

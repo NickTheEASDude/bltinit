@@ -1,6 +1,6 @@
 project(
   'init', 'c',
-  version: '1.6.1', meson_version: '>=1.3.0',
+  version: '1.6.2', meson_version: '>=1.3.0',
   default_options: ['sysconfdir=/etc']
 )
 add_project_arguments('-DHAVE_CONFIG_H', language: ['c', 'cpp'])
