@@ -1,4 +1,8 @@
-project('init', 'c', version: '1.6.1', meson_version: '>=1.3.0')
+project(
+  'init', 'c',
+  version: '1.6.1', meson_version: '>=1.3.0',
+  default_options: ['sysconfdir=/etc']
+)
 supported = ['linux', 'freebsd', 'netbsd']
 if host_machine.system() not in supported
   error('Host OS type not supported by this project.')
