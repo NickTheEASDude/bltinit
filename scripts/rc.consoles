@@ -14,15 +14,13 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-# Format is always <tty#>:<G|X>:<R|S|A>:<program to invoke>
-# tty# is only parsed if C2 is G
-# If C2 is G and C3 is A, it's treated as if C3 is R (makes implementation easier for me)
+# Device;Enable?;Respawn?;What to run
+# Format is always <devfile>;<Y|E|N>;<R|S|A>;<program to invoke>
 # NOTE: Arguments for the program are parsed using spaces, REGARDLESS OF WHETHER OR NOT QUOTES ARE USED
-#
-/dev/tty1;G;R;/sbin/getty 115200 /dev/tty1
-/dev/tty2;G;R;/sbin/getty 115200 /dev/tty2
-/dev/tty3;G;R;/sbin/getty 115200 /dev/tty3
-/dev/tty4;G;R;/sbin/getty 115200 /dev/tty4
-/dev/tty5;G;R;/sbin/getty 115200 /dev/tty5
-/dev/tty6;G;R;/sbin/getty 115200 /dev/tty6
+/dev/tty1;Y;R;/sbin/agetty --noclear tty1 linux
+/dev/tty2;Y;R;/sbin/agetty tty2 linux
+/dev/tty3;Y;R;/sbin/agetty tty3 linux
+/dev/tty4;Y;R;/sbin/agetty tty4 linux
+/dev/tty5;Y;R;/sbin/agetty tty5 linux
+/dev/tty6;Y;R;/sbin/agetty tty6 linux
+/dev/ttyS0;E;R;/sbin/agetty -L --keep-baud ttyS0 ansi
