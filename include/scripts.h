@@ -1,7 +1,9 @@
 #ifndef INIT_SCRIPTS_H
 #define INIT_SCRIPTS_H
-#include "config.h"
-#include <sys/types.h>
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #ifndef RC
 # define RC "/etc/rc"
