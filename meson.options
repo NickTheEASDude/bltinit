@@ -1,0 +1,5 @@
+option('manpages',
+  type: 'boolean',
+  value: true,
+  description: 'Install manpages'
+)

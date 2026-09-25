@@ -1,6 +1,6 @@
 project(
   'init', 'c',
-  version: '1.6.2', meson_version: '>=1.3.0',
+  version: '1.6.3', meson_version: '>=1.3.0',
   default_options: ['sysconfdir=/etc']
 )
 add_project_arguments('-DHAVE_CONFIG_H', language: ['c', 'cpp'])
@@ -21,5 +21,11 @@ config.set_quoted(
   'RC_FALL',
   get_option('prefix') / get_option('libdir') / 'rc/rc.fallback'
 )
+
+if get_option('manpages')
+  pod2man = find_program('pod2man', required: true)
+  subdir('man')
+endif
+
 subdir('src')
 subdir('scripts')

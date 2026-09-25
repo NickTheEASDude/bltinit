@@ -7,3 +7,9 @@ NOTE: You are absolutely not allowed to strip the gplv3 licensing off of the exi
 If you're using this on a system that uses elogind and cgroups v1, you might have to patch rc.subr if you want to prevent elogind from killing daemons you started from a elogind-managed session (yes, this happens even if you run it through a daemonizer, it's very annoying). I already added a fix for that if your system is using elogind with cgroups v2 (aka most modern systems), but do know that this might not work for certain older systems!
 
 I'll probably add a fix for this later if this system actually gains any traction.
+
+## DEPENDENCIES
+- A standard Unix C development toolkit
+- Meson >= 1.3.0 (build-time)
+- Ninja (build-time)
+- Perl (only if you're generating the manpages)
