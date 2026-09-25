@@ -118,7 +118,7 @@ If you want other scripts to only enable if a target is enabled in L<rc.conf(5)>
 
 =head1 SEE ALSO
 
-L<rc.conf(5)>, L<rc.consoles(5)>, L<rcorder(8)>, L<rundaemon(8)>
+L<rc.conf(5)>, L<rc.consoles(5)>, L<rc.subr(8)>, L<rcorder(8)>, L<rundaemon(8)>
 
 =head1 AUTHOR
 
