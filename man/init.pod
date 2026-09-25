@@ -1,0 +1,23 @@
+=head1 NAME
+
+init - System initialization daemon
+
+=head1 SYNOPSIS
+
+As of now, there's no reason for a user to directly invoke init
+
+=head1 DESCRIPTION
+
+I<init> is the first process launched by the kernel, and is the parent of all other processes. On bootup, I<init> runs L<rc(8)> to get the system to a usable state, then spawns consoles based on what is defined in L<rc.consoles(5)>.
+
+During normal system operation, I<init> will reap zombie processes and respawn consoles when necessary.
+
+When I<init> is signalled to shutdown the system by L<stopsys(8)>, it runs L<rc.shutdown(8)> to get the system ready for shutdown, then calls B<stage2stopsys> to get the system in a state where I<init> can safely call L<reboot(2)> and shut the system down.
+
+=head1 SEE ALSO
+
+L<stopsys(8)>, L<rc(8)>, L<stopsys(8)>
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.

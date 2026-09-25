@@ -1,0 +1,125 @@
+=head1 NAME
+
+rc - Service management framework
+
+=head1 SYNOPSIS
+
+=over 4
+
+=item B<rc>
+
+=item B<rc.shutdown>
+
+=item B<rc.conf>
+
+=item B<rc.d/>
+
+=item B<rc.consoles>
+
+=back
+
+=head1 DESCRIPTION
+
+I<rc> is a system utility, invoked by L<init(8)> on system bootup, that invokes the necessary scripts and daemons needed to bring the system up to a usable state. Usually the user doesn't directly modify I<rc>, and instead they should create scripts in I<rc.d/> which will be ordered by L<rcorder(8)> and started based on a rc variable defined in L<rc.conf(5)>.
+
+I<rc.shutdown> gets invoked by L<init(8)> at the beginning of the shutdown sequence, and gets the system to a state where L<init(8)> can cleanly run its internal stopsys routines. As with I<rc>, I<rc.shutdown> shouldn't be modified directly, the scripts in I<rc.d/> will be invoked B<in reverse order>. (See L<rcorder(8)> for more details).
+
+I<rc.conf> is where specific services or targets are marked as enabled.
+
+I<rc.consoles> is parsed by init, and is used to spawn consoles based on what it parses (See L<rc.consoles(5)> for how to write this file).
+
+=head1 RETURN
+
+I<rc> returns 0 if every script it runs in I<rc.d/> returns 0, otherwise it returns 1 and L<init(8)> stops the boot process early.
+
+Scripts in I<rc.d/> always return 0 unless B<IMPORTANCE: critical> is in the info-headers, and B<cmd> or start_cmd() doesn't return 0.
+
+I<rc.shutdown> always returns 0.
+
+=head1 FILES
+
+=over 4
+
+=item F</etc/rc>
+
+=item F</etc/rc.shutdown>
+
+=item F</etc/rc.conf>
+
+=item F</etc/rc.d/>
+
+=item F</etc/rc.consoles>
+
+=back
+
+=head1 EXAMPLES
+
+The following is for a daemonizing service, using L<rundaemon(8)>
+
+	#!/bin/sh
+	### BEGIN rc-info
+	# PROVIDES: foo
+	# REQUIRES: bar
+	# TYPE: daemon
+	### END rc-info
+	
+	name="foo"
+	rcvar="foo_enable"
+	pidfile="/run/$name.pid"
+	cmd="/sbin/rundaemon"
+	cmd_args="$pidfile bar --foreground"
+	. /etc/rc.subr
+	
+	run_rc_command "$1"
+
+The following is for a oneshot script that will also cause the bootup to stop prematurely if it fails
+
+	#!/bin/sh
+	### BEGIN rc-info
+	# PROVIDES: baz
+	# REQUIRES: foo
+	# BEFORE: bar
+	# IMPORTANCE: critical
+	# TYPE: oneshot
+	### END rc-info
+	
+	name="baz"
+	rcvar="baz_enable"
+	start_cmd() {
+		touch /tmp/bar || return 1
+		rm /tmp/bar || return 1
+	}
+	
+	. /etc/rc.subr
+	run_rc_command "$1"
+
+You can also provide a stop command by defining the stop_cmd() function in the rc script, but it's not required (there's a default fallback for daemonizing scripts. Nothing is done on oneshot scripts without a stop function).
+
+Example of a pseudo-target (there's nothing special about this script, but it can be useful to have to force the order you want for your scripts)
+
+	#!/bin/sh
+	### BEGIN rc-info
+	# PROVIDES: TARGET
+	# REQUIRES: foo bar baz
+	# TYPE: oneshot
+	### END rc-info
+	
+	name="TARGET"
+	rcvar="TARGET_enable"
+	start_msg="Reached target TARGET"
+	start_cmd() {
+		:
+	}
+	
+	. /etc/rc.subr
+	run_rc_command "$1"
+
+If you want other scripts to only enable if a target is enabled in L<rc.conf(5)>, set their rcvar to (target name)_enable.
+
+=head1 SEE ALSO
+
+L<rc.conf(5)>, L<rc.consoles(5)>, L<rcorder(8)>, L<rundaemon(8)>
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.

@@ -1,0 +1,27 @@
+=head1 NAME
+
+rc.conf - mark services to be enabled/disabled.
+
+=head1 DESCRIPTION
+
+I<rc.conf> is the configuration file parsed by B<rc.subr> to see whether or not to run an rc script. Format for this file is key=value, same as in a shell script. The key should match the corresponding rcvar set in the rc script you're trying to enable. If a service's rcvar isn't found in this file, it's implicitly disabled.
+
+=head1 EXAMPLES
+
+=over 4
+
+=item foo_enable="YES"
+
+=item TARGET_enable="YES"
+
+=item baz_enable="NO"
+
+=back
+
+=head1 SEE ALSO
+
+L<rc(8)>
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.

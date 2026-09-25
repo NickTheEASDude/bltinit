@@ -1,0 +1,19 @@
+=head1 NAME
+
+stopsys - initialize a shutdown
+
+=head1 SYNOPSIS
+
+stopsys B<poweroff>|B<reboot>|B<halt>
+
+=head1 DESCRIPTION
+
+I<stopsys> signals to L<init(8)> to begin shutting the system down and to perform the stop action specified by the user. Usually there will also be symlinks to this program (poweroff, reboot, halt) that do the same thing.
+
+=head1 SEE ALSO
+
+L<init(8)>
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.

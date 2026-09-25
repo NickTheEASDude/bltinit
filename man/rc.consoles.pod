@@ -1,0 +1,33 @@
+=head1 NAME
+
+rc.consoles - Management of spawned consoles
+
+=head1 DESCRIPTION
+
+I<rc.consoles> is the configuration file parsed by L<init(8)> in order to spawn consoles. Each line is of this form:
+
+<Device File>;<Enable?>;<Respawn Behavior>;<Command to Run>
+
+Accepted values for col. 2 are B<Y|E|N>. Setting Y means L<init(8)> will always try to (re)spawn a console on the device specified in col. 1 even if it doesn't exist. Setting E tells L<init(8)> to only spawn and track this console if its device file exists. Setting N tells L<init(8)> to just ignore this entry entirely.
+
+Accepted values for col. 3 are B<R:S:A>. R tells L<init(8)> to respawn this console if the previous console's process was terminated. S tells L<init(8)> to only spawn this console once, and once it exits, it stops tracking it. A is the same as S, but a prompt is given before running the command specified in col. 4, which says "Press enter to continue...". The specified command won't run until the user presses enter.
+
+=head1 EXAMPLES
+
+=over 4
+
+=item /dev/tty1;Y;R;/sbin/agetty tty1 linux
+
+=item /dev/tty2;Y;S;/bin/sh
+
+=item /dev/ttyS0;E;A;/sbin/agetty -L --keep-baud ttyS0 ansi
+
+=back
+
+=head1 SEE ALSO
+
+L<init(8)>
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.

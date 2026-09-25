@@ -1,0 +1,23 @@
+=head1 NAME
+
+rcorder - Dependency management of services
+
+=head1 SYNOPSIS
+
+rcorder [RC_SCRIPT]...
+
+=head1 DESCRIPTION
+
+I<rcorder> handles the order of execution of the services specified in the command arguments. Both L<rc(8)> and L<rc.shutdown(8)> call I<rcorder> as specified in EXAMPLE, and this is almost always how you will call I<rcorder> (you can also use this just to check if your dependency order is correct).
+
+=head1 EXAMPLE
+
+/sbin/rcorder /etc/rc.d/*
+
+=head1 SEE ALSO
+
+L<rc(8)>, L<rc.shutdown(8)>
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.

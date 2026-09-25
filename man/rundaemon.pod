@@ -1,0 +1,23 @@
+=head1 NAME
+
+rundaemon - daemon spawning and tracking
+
+=head1 SYNOPSIS
+
+rundaemon <pidfile> <cmd> [cmd_args]...
+
+=head1 DESCRIPTION
+
+I<rundaemon> daemonizes the program passed into it and writes its PID into the specified PID file.
+
+=head1 RETURN
+
+I<rundaemon> returns non-zero if any of the L<fork(2)> or L<setsid(2)> calls fail, and writes to the syslog and stderr about which step failed, along with the errno. If child 2 fails to exec, no error is returned in either the parent or child 1, but the error should be logged to the syslog. DO NOTE: If this latter failure happens, the PID file won't be valid, so you can check if the daemonization succeeded by checking if the PID file matches with the daemon's PID using L<pgrep(1)>.
+
+=head1 EXAMPLE
+
+/sbin/rundaemon /run/foo.pid foo bar
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.
