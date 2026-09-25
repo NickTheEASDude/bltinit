@@ -12,6 +12,10 @@ Accepted values for col. 2 are B<Y|E|N>. Setting Y means L<init(8)> will always 
 
 Accepted values for col. 3 are B<R:S:A>. R tells L<init(8)> to respawn this console if the previous console's process was terminated. S tells L<init(8)> to only spawn this console once, and once it exits, it stops tracking it. A is the same as S, but a prompt is given before running the command specified in col. 4, which says "Press enter to continue...". The specified command won't run until the user presses enter.
 
+=head1 FILES
+
+/etc/rc.consoles
+
 =head1 EXAMPLES
 
 =over 4

@@ -18,6 +18,10 @@ I<rundaemon> returns non-zero if any of the L<fork(2)> or L<setsid(2)> calls fai
 
 /sbin/rundaemon /run/foo.pid foo bar
 
+=head1 SEE ALSO
+
+L<pgrep(1)>
+
 =head1 AUTHOR
 
 Written by BLT Sandwich, 2026.

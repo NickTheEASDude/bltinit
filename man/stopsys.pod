@@ -4,7 +4,7 @@ stopsys - initialize a shutdown
 
 =head1 SYNOPSIS
 
-stopsys B<poweroff>|B<reboot>|B<halt>
+stopsys poweroff|reboot|halt
 
 =head1 DESCRIPTION
 

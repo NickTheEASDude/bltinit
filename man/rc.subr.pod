@@ -1,0 +1,19 @@
+=head1 NAME
+
+rc.subr - common subroutines/variables used across all rc.d scripts
+
+=head1 DESCRIPTION
+
+I<rc.subr> is the file sourced near the bottom of scripts in L<rc.d(8)>, which contains the common subroutines (like run_rc_command) and variables (like name and pidfile) used in said scripts. All scripts in L<rc.d(8)> are expected to source this, otherwise daemon tracking might fail (unless you implement your own tracking logic). It also is what parses the TYPE and IMPORTANCE fields of the rc info, and handles those accordingly (see examples in L<rc.d(8)> for more details).
+
+=head1 FILES
+
+/etc/rc.subr
+
+=head1 SEE ALSO
+
+L<rc.d(8)>
+
+=head1 AUTHOR
+
+Written by BLT Sandwich, 2026.

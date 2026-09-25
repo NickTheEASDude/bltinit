@@ -6,6 +6,7 @@ man_pages = [
   ['rundaemon.pod', 8],
   ['rcorder.pod', 8],
   ['stopsys.pod', 8],
+  ['rc.subr.pod', 5],
   ['rc.conf.pod', 5],
   ['rc.consoles.pod', 5]
 ]

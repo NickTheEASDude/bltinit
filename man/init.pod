@@ -16,7 +16,7 @@ When I<init> is signalled to shutdown the system by L<stopsys(8)>, it runs L<rc.
 
 =head1 SEE ALSO
 
-L<stopsys(8)>, L<rc(8)>, L<stopsys(8)>
+L<stopsys(8)>, L<rc(8)>, L<rc.consoles(5)>
 
 =head1 AUTHOR
 
