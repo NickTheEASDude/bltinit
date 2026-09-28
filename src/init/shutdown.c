@@ -32,9 +32,8 @@ static inline void ksleep(unsigned int seconds) {
 	struct timespec req, rem;
 	req.tv_sec = seconds;
 	req.tv_nsec = 0;
-	while (nanosleep(&req, &rem) == -1 && errno == EINTR) {
+	while (nanosleep(&req, &rem) == -1 && errno == EINTR)
 		req = rem;
-	}
 }
 void stage2stopsys(void) {
 	write(STDOUT_FILENO, ": Sending SIGTERM to all processes\n", 35);
