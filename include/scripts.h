@@ -25,5 +25,4 @@
 # define S2_STOPSYS "/usr/libexec/stage2stopsys"
 #endif
 
-#endif // INIT_SCRIPTS_H
-
+#endif
