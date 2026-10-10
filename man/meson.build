@@ -21,6 +21,7 @@ man_centers = [
   'System Manager\'s Manual'
 ]
 rc8_symlinks = ['rc.d.8', 'rc.shutdown.8']
+stopsys8_symlinks = ['halt.8', 'poweroff.8', 'reboot.8']
 
 foreach page: man_pages
   page_source = page[0]
@@ -46,6 +47,14 @@ foreach link: rc8_symlinks
   install_symlink(
     link,
     pointing_to: 'rc.8',
+    install_dir: get_option('mandir') / 'man8'
+  )
+endforeach
+
+foreach link: stopsys8_symlinks
+  install_symlink(
+    link,
+    pointing_to: 'stopsys.8',
     install_dir: get_option('mandir') / 'man8'
   )
 endforeach
