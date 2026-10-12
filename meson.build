@@ -20,7 +20,7 @@ config.set_quoted('RC_SHUT', get_option('sysconfdir') / 'rc.shutdown')
 config.set_quoted('RC_CONS', get_option('sysconfdir') / 'rc.consoles')
 config.set_quoted(
   'RC_FALL',
-  get_option('prefix') / get_option('libdir') / 'rc/rc.fallback'
+  get_option('prefix') / get_option('datadir') / 'rc/rc.fallback'
 )
 
 if get_option('manpages')

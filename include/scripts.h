@@ -18,7 +18,7 @@
 #endif
 
 #ifndef RC_FALL
-# define RC_FALL "/usr/lib/rc/rc.fallback"
+# define RC_FALL "/usr/share/rc/rc.fallback"
 #endif
 
 #ifndef S2_STOPSYS

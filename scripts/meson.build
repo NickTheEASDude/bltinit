@@ -28,6 +28,6 @@ install_data(
 )
 install_data(
   'rc.fallback',
-  install_dir: get_option('libdir') / 'rc',
+  install_dir: get_option('datadir') / 'rc',
   install_mode: ['rw-r--r--', 0, 0]
 )
