@@ -71,7 +71,9 @@ run_rc_command() {
 				test -n "$start_msg" \
 					&& echo "${start_msg}" \
 					|| echo "/ Starting $name"
-				start_cmd
+				test -e /sys/fs/cgroup/cgroup.procs \
+					&& echo 0 > /sys/fs/cgroup/cgroup.procs
+				eval "$cmd $cmd_args"
 				rc=$?
 				if test $rc -ne 0; then
 					if test "$importance" = "critical"; then

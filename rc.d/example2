@@ -25,6 +25,7 @@
 
 name="example2"
 rcvar="${name}_enable"
+cmd=start_cmd
 
 # If you don't provide start_msg or stop_msg, defaults will be used.
 # Also true of stop_cmd(), but only in daemonizing scripts.

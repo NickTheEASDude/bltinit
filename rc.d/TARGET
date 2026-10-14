@@ -25,10 +25,8 @@
 name="TARGET"
 rcvar="${name}_enable"
 start_msg="Reached target TARGET"
-
-start_cmd() {
-	:
-}
+# If no cmd variable is defined, then it'll just print the start_msg and exit,
+# which is perfect for pseudo-targets like this.
 
 . /etc/rc.subr
 run_rc_command "$1"
