@@ -82,17 +82,17 @@ retry:
 # define HALT() reboot(LINUX_REBOOT_CMD_HALT)
 # define REBOOT() reboot(LINUX_REBOOT_CMD_RESTART)
 # define POWEROFF() reboot(LINUX_REBOOT_CMD_POWER_OFF)
-#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 # include <sys/reboot.h>
 # define ENABLE_CAD() ((void) 0)
-# ifdef __FreeBSD__
-#  define HALT() reboot(RB_HALT)
-#  define REBOOT() reboot(RB_AUTOBOOT)
-#  define POWEROFF() reboot(RB_POWEROFF)
-# else
+# ifdef __NetBSD__
 #  define HALT() reboot(RB_HALT, NULL)
 #  define REBOOT() reboot(RB_AUTOBOOT, NULL)
 #  define POWEROFF() reboot(RB_POWERDOWN, NULL)
+# else
+#  define HALT() reboot(RB_HALT)
+#  define REBOOT() reboot(RB_AUTOBOOT)
+#  define POWEROFF() reboot(RB_POWEROFF)
 # endif
 #else
 # error("Unsupported OS!")

@@ -17,11 +17,11 @@
 
 project(
   'init', 'c',
-  version: '1.7.0', meson_version: '>=1.3.0',
+  version: '1.7.1', meson_version: '>=1.3.0',
   default_options: ['sysconfdir=/etc']
 )
 add_project_arguments('-DHAVE_CONFIG_H', language: ['c', 'cpp'])
-supported = ['linux', 'freebsd', 'netbsd']
+supported = ['linux', 'freebsd', 'netbsd', 'dragonfly']
 if host_machine.system() not in supported
   error('Host OS type not supported by this project.')
 endif
