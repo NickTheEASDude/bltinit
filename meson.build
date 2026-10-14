@@ -22,7 +22,6 @@ project(
 )
 add_project_arguments('-DHAVE_CONFIG_H', language: ['c', 'cpp'])
 supported = ['linux', 'freebsd', 'netbsd']
-# TODO: add support for illumos
 if host_machine.system() not in supported
   error('Host OS type not supported by this project.')
 endif
