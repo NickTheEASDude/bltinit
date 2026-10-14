@@ -8,6 +8,8 @@ If you're using this on a system that uses elogind and cgroups v1, you might hav
 
 I'll probably add a fix for this later if this system actually gains any traction.
 
+ALSO: This will fail to build using a pure ISO C compiler, unless \_GNU\_SOURCE is defined (on linux) or \_POSIX\_C\_SOURCE is defined with a value greater than or equal to 200809L (on other systems). I'll deal with the portability problems of using dprintf and vdprintf later.
+
 ## DEPENDENCIES
 - A standard Unix C development toolkit
 - Meson >= 1.3.0 (build-time)
