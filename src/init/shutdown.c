@@ -49,7 +49,7 @@ void stage2stopsys(void) {
 			continue;
 		}
 	}
-retry:
+retry:;
 	pid_t stage2 = fork();
 	if (stage2 < 0) {
 		warnx("Fork failed, retrying");
@@ -74,7 +74,7 @@ retry:
 	}
 }
 
-[[noreturn]] void kstop(const sig_atomic_t action) {
+__attribute__((noreturn)) void kstop(const sig_atomic_t action) {
 #if defined(__linux__)
 # include <sys/reboot.h>
 # include <linux/reboot.h>

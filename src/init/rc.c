@@ -25,7 +25,7 @@
 #include <stdbool.h>
 
 bool startServices(void) {
-retry:
+retry:;
 	pid_t services = fork();
 	if (services < 0) {
 		warnx("Fork failed, retrying");
@@ -52,7 +52,7 @@ retry:
 }
 
 void stopServices(void) {
-retry:
+retry:;
 	pid_t services = fork();
 	if (services < 0) {
 		warnx("Fork failed, retrying");

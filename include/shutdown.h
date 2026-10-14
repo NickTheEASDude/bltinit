@@ -19,6 +19,6 @@
 #include <sys/types.h>
 
 void stage2stopsys(void);
-[[noreturn]] void kstop(const sig_atomic_t action);
+__attribute__((noreturn)) void kstop(const sig_atomic_t action);
 
 #endif
