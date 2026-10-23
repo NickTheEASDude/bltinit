@@ -117,11 +117,11 @@ run_rc_command() {
 			;;
 		stop)
 			if test "$type" = "oneshot"; then
-				if command -v stop_cmd > /dev/null 2>&1; then
+				if test -n "$stop_cmd"; then
 					test -n "$stop_msg" \
 						&& echo "${stop_msg}" \
 						|| echo "/ Stopping $name"
-					stop_cmd
+					eval "$stop_cmd $stop_cmd_args"
 				fi
 			else
 				if ! is_running; then
@@ -133,8 +133,8 @@ run_rc_command() {
 				test -n "$stop_msg" \
 					&& echo "${stop_msg}" \
 					|| echo "/ Stopping $name"
-				if command -v stop_cmd > /dev/null 2>&1; then
-					stop_cmd
+				if test -n "$stop_cmd"; then
+					eval "$stop_cmd $stop_cmd_args"
 				else
 					default_stop_cmd
 				fi
