@@ -28,7 +28,7 @@ I<rundaemon> daemonizes the program passed into it.
 
 =head1 RETURN
 
-I<rundaemon> returns non-zero if any step along the way fails, with an error code indicating what failed, and a message logged to stderr with the errno. A NOTE: I<rundaemon> doesn't care what happens after it call L<execvp(2)> on the provided cmd, as long as it's successful, so if you're doing process tracking with this, use cgroups, or run L<pgrep(1)> using the command and see if you get anything back.
+I<rundaemon> returns non-zero if any step along the way fails, with an error code indicating what failed, and a message logged to stderr with the errno. A NOTE: I<rundaemon> doesn't care what happens after it calls L<execvp(2)> on the provided cmd, as long as it's successful, so if you're doing process tracking with this, use cgroups, or run L<pgrep(1)> using the command and see if you get anything back.
 
 =head1 EXAMPLE
 
