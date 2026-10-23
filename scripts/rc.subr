@@ -153,6 +153,7 @@ run_rc_command() {
 			else
 				is_running && echo "$name is running" \
 					|| echo "$name isn't running"
+				is_running && return 0 || return 1
 			fi
 			;;
 		restart)
