@@ -44,22 +44,34 @@ get_rc_meta() {
 }
 
 is_running() {
-	test -n "$pidfile" && test -f "$pidfile" && pgrep -f -F "$pidfile" "$name" > /dev/null 2>&1
+	test -d "$CGROUP" && { read -r _ < "$CGROUP"/cgroup.procs; } 2> /dev/null
 }
 
-default_stop_cmd() {
+stop_cgroup() {
 	local pid sig="${sig_stop:-TERM}" timeout="${stop_timeout:-30}" n=0
 	timeout=$((timeout*10))
-	pid="$(cat "$pidfile")"
-	kill -s "$sig" "$pid" 2> /dev/null
-	while kill -0 "$pid" 2> /dev/null && test $n -lt "$timeout"; do
+	echo 1 > "$CGROUP"/cgroup.freeze
+	while IFS= read -r pid || test -n "$pid"; do
+		kill -s "$sig" "$pid" 2> /dev/null
+	done < "$CGROUP"/cgroup.procs
+	echo 0 > "$CGROUP"/cgroup.freeze
+	while is_running && test $n -lt "$timeout"; do
 		sleep 0.1; n=$((n+1))
 	done
-	kill -0 "$pid" 2> /dev/null && kill -KILL "$pid" 2> /dev/null
-	rm -f "$pidfile"
+	test $n -eq "$timeout" && echo 1 > "$CGROUP"/cgroup.kill
+	n=0
+	while test -d "$CGROUP" && test $n -lt 150; do
+		find "$CGROUP" -depth -type d -exec rmdir {} \; 2> /dev/null
+		sleep 0.1; n=$((n+1))
+	done
 }
 
 run_rc_command() {
+	if test -z "$name"; then
+		echo >&2 "ERROR: name not set, aborting"
+		return 1
+	fi
+	CGROUP="${cgroup_dir:-/sys/fs/cgroup/system.slice/"$name"}"
 	load_rc_config "$name"
 	type="${type:-$(get_rc_meta TYPE "$0")}"
 	importance="${importance:-$(get_rc_meta IMPORTANCE "$0")}"
@@ -72,8 +84,6 @@ run_rc_command() {
 				test -n "$start_msg" \
 					&& echo "${start_msg}" \
 					|| echo "/ Starting $name"
-				test -e /sys/fs/cgroup/cgroup.procs \
-					&& echo 0 > /sys/fs/cgroup/cgroup.procs
 				eval "$cmd $cmd_args"
 				rc=$?
 				if test $rc -ne 0; then
@@ -89,12 +99,11 @@ run_rc_command() {
 					echo "$name already started"
 					exit 0
 				fi
+				mkdir -p "$CGROUP"
 				test -n "$start_msg" \
 					&& echo "${start_msg}" \
 					|| echo "/ Starting $name"
-				test -e /sys/fs/cgroup/cgroup.procs \
-					&& echo 0 > /sys/fs/cgroup/cgroup.procs
-				eval "$cmd $cmd_args"
+				(echo 0 > "$CGROUP"/cgroup.procs && eval "$cmd $cmd_args")
 				rc=$?
 				ATTEMPTS=5
 				while test "$ATTEMPTS" -ne 0; do
@@ -105,9 +114,7 @@ run_rc_command() {
 					fi
 				done
 				if test $rc -ne 0 || ! is_running; then
-					if test -n "$pidfile" && test -f "$pidfile"; then
-						rm -f "$pidfile"
-					fi
+					stop_cgroup
 					if test "$importance" = "critical"; then
 						echo "CRITICAL: $name failed to start" >&2
 						exit 1
@@ -136,16 +143,15 @@ run_rc_command() {
 					|| echo "/ Stopping $name"
 				if test -n "$stop_cmd"; then
 					eval "$stop_cmd $stop_cmd_args"
-				else
-					default_stop_cmd
 				fi
+				stop_cgroup
 			fi
 			;;
 		status)
 			if test "$type" = "oneshot"; then
 				echo "$name is oneshot, has no status"
 			else
-				is_running && echo "$name is running as $(cat "$pidfile")" \
+				is_running && echo "$name is running" \
 					|| echo "$name isn't running"
 			fi
 			;;

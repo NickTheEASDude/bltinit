@@ -32,13 +32,12 @@
 
 name="example1"
 rcvar="${name}_enable"
-pidfile="/run/${name}.pid"
 # If you don't provide start_msg or stop_msg, defaults will be used.
 # Also true of stop_cmd(), in both oneshot and daemonizing scripts.
 start_msg="+ Starting $name"
 stop_msg="- Stopping $name"
 cmd="/sbin/rundaemon"
-cmd_args="$pidfile exampleprog"
+cmd_args="exampleprog"
 
 stop_cmd() {
 	echo "maybe you need to do some cleanup or something" || return 1

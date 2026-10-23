@@ -1,4 +1,4 @@
-// A very simple daemonizing program, also writes a pidfile for the process it launches.
+// A very simple daemonizing program.
 
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 BLT Sandwich
@@ -29,9 +29,9 @@
 int main(int argc, char *argv[]) {
 	int err;
 	openlog("rundaemon", LOG_PID | LOG_CONS | FD_CLOEXEC, LOG_DAEMON);
-	if (argc < 3) {
+	if (argc < 2) {
 		fprintf(stderr, "NOT ENOUGH ARGUMENTS\n");
-		fprintf(stderr, "Usage: %s <pidfile> <command> [cmd_args]\n", argv[0]);
+		fprintf(stderr, "Usage: %s <command> [cmd_args]...\n", argv[0]);
 		return 1;
 	}
 
@@ -95,34 +95,10 @@ int main(int argc, char *argv[]) {
 				_exit(255);
 		} else {
 			close(pipeFD[0]);
-			int pidFile = open(
-				argv[1],
-				O_RDWR |
-				O_CREAT |
-				O_EXCL |
-				O_NOFOLLOW |
-				O_TRUNC,
-				S_IRUSR |
-				S_IWUSR |
-				S_IRGRP |
-				S_IROTH
-			);
-			if (pidFile < 0) {
-				err = errno;
-				syslog(LOG_ERR, "unable to create pidfile: %s", strerror(err));
-				fprintf(stderr, "rundaemon: unable to create pidfile: %s\n", strerror(err));
-				err = 6;
-				write(pipeFD[1], &err, sizeof(err));
-				close(pipeFD[1]);
-				closelog();
-				_exit(6);
-			}
-			dprintf(pidFile,"%d\n", (int) getpid());
-			close(pidFile);
-			char *newArgv[argc - 1];
-			for (int i = 2; i < argc; i++)
-				newArgv[i - 2] = argv[i];
-			newArgv[argc - 2] = NULL;
+			char *newArgv[argc];
+			for (int i = 1; i < argc; i++)
+				newArgv[i - 1] = argv[i];
+			newArgv[argc - 1] = NULL;
 			int fd = open("/dev/null", O_RDWR);
 			if (fd != -1) {
 				dup2(fd, STDIN_FILENO);
@@ -138,10 +114,9 @@ int main(int argc, char *argv[]) {
 			const int sendErr = 0;
 			write(pipeFD[1], &sendErr, sizeof(sendErr));
 			write(pipeFD[1], &err, sizeof(err));
-			unlink(argv[1]);
 			close(pipeFD[1]);
 			closelog();
-			_exit(7);
+			_exit(6);
 		}
 	}
 	return 0;

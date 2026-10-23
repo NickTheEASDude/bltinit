@@ -79,12 +79,11 @@ The following is for a daemonizing service, using L<rundaemon(8)>
 	# TYPE: daemon
 	### END rc-info
 	
+	. /etc/rc.subr
 	name="foo"
 	rcvar="foo_enable"
-	pidfile="/run/$name.pid"
 	cmd="/sbin/rundaemon"
-	cmd_args="$pidfile bar --foreground"
-	. /etc/rc.subr
+	cmd_args="bar --foreground"
 	
 	run_rc_command "$1"
 
@@ -99,6 +98,7 @@ The following is for a oneshot script that will also cause the bootup to stop pr
 	# TYPE: oneshot
 	### END rc-info
 	
+	. /etc/rc.subr
 	name="baz"
 	rcvar="baz_enable"
 	cmd=start_cmd
@@ -107,7 +107,6 @@ The following is for a oneshot script that will also cause the bootup to stop pr
 		rm /tmp/bar || return 1
 	}
 	
-	. /etc/rc.subr
 	run_rc_command "$1"
 
 You can also provide a stop command by defining the stop_cmd() function in the rc script, but it's not required (there's a default fallback for daemonizing scripts. Nothing is done on oneshot scripts without a stop function).
@@ -121,11 +120,11 @@ Example of a pseudo-target (there's nothing special about this script, but it ca
 	# TYPE: oneshot
 	### END rc-info
 	
+	. /etc/rc.subr
 	name="TARGET"
 	rcvar="TARGET_enable"
 	start_msg="Reached target TARGET"
 	
-	. /etc/rc.subr
 	run_rc_command "$1"
 
 If you want other scripts to only enable if a target is enabled in L<rc.conf(5)>, set their rcvar to (target name)_enable.

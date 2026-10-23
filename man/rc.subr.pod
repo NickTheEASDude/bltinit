@@ -20,7 +20,7 @@ rc.subr - common subroutines/variables used across all rc.d scripts
 
 =head1 DESCRIPTION
 
-I<rc.subr> is the file sourced near the bottom of scripts in L<rc.d(8)>, which contains the common subroutines (like run_rc_command) and variables (like name and pidfile) used in said scripts. All scripts in L<rc.d(8)> are expected to source this, otherwise daemon tracking might fail (unless you implement your own tracking logic).
+I<rc.subr> is the file sourced near the bottom of scripts in L<rc.d(8)>, which contains the common subroutines (like run_rc_command) and variables (like name and rcvar) used in said scripts. All scripts in L<rc.d(8)> are expected to source this, otherwise daemon tracking will fail.
 
 This file is where TYPE and IMPORTANCE are parsed (see EXAMPLES in L<rc.d(8)> to see what values those can be set to), and where rcvar from L<rc.conf(5)> is checked.
 
