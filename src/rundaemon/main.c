@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define _GNU_SOURCE // for pipe2(2)
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -39,17 +40,30 @@ int main(int argc, char *argv[]) {
 		syslog(LOG_ERR, "child1 fork failed: %s", strerror(err));
 		fprintf(stderr, "rundaemon: child1 fork failed: %s\n", strerror(err));
 		closelog();
-		return 1;
-	} else if (child1 > 0)
-		waitpid(child1, NULL, 0);
-	else {
+		return 2;
+	} else if (child1 > 0) {
+		int status;
+		waitpid(child1, &status, 0);
+		if (WIFEXITED(status))
+			return WEXITSTATUS(status);
+		else
+			return 0;
+	} else {
 		pid_t sid = setsid();
+		int pipeFD[2];
+		if (pipe2(pipeFD, O_CLOEXEC) == -1) {
+			err = errno;
+			syslog(LOG_ERR, "child1 pipe failed: %s", strerror(err));
+			fprintf(stderr, "rundaemon: child1 pipe failed: %s\n", strerror(err));
+			_exit(3);
+		}
+
 		if (sid < 0) {
 			err = errno;
 			syslog(LOG_ERR, "child1 setsid failed: %s", strerror(err));
 			fprintf(stderr, "rundaemon: child1 setsid failed: %s\n", strerror(err));
 			closelog();
-			_exit(2);
+			_exit(4);
 		}
 		pid_t child2 = fork();
 		if (child2 < 0) {
@@ -57,11 +71,29 @@ int main(int argc, char *argv[]) {
 			syslog(LOG_ERR, "child2 fork failed: %s", strerror(err));
 			fprintf(stderr, "rundaemon: child2 fork failed: %s\n", strerror(err));
 			closelog();
-			_exit(3);
+			_exit(5);
 		} else if (child2 > 0) {
 			closelog();
-			_exit(0);
+			close(pipeFD[1]);
+			int cErr = 0;
+			ssize_t byteCount = read(pipeFD[0], &cErr, sizeof(cErr));
+			if (byteCount == 0) {
+				close(pipeFD[0]);
+				_exit(0);
+			} else if (byteCount > 0) {
+				if (cErr == 0) {
+					read(pipeFD[0], &cErr, sizeof(cErr));
+					fprintf(stderr, "rundaemon: child2 execvp failed: %s\n", strerror(cErr));
+					close(pipeFD[0]);
+					_exit(7);
+				} else {
+					close(pipeFD[0]);
+					_exit(cErr);
+				}
+			} else
+				_exit(255);
 		} else {
+			close(pipeFD[0]);
 			int pidFile = open(
 				argv[1],
 				O_RDWR |
@@ -78,8 +110,11 @@ int main(int argc, char *argv[]) {
 				err = errno;
 				syslog(LOG_ERR, "unable to create pidfile: %s", strerror(err));
 				fprintf(stderr, "rundaemon: unable to create pidfile: %s\n", strerror(err));
+				err = 6;
+				write(pipeFD[1], &err, sizeof(err));
+				close(pipeFD[1]);
 				closelog();
-				_exit(4);
+				_exit(6);
 			}
 			dprintf(pidFile,"%d\n", (int) getpid());
 			close(pidFile);
@@ -99,10 +134,13 @@ int main(int argc, char *argv[]) {
 			execvp(newArgv[0], newArgv);
 			err = errno;
 			syslog(LOG_ERR, "child2 execvp failed: %s", strerror(err));
-			fprintf(stderr, "rundaemon: child2 execvp failed: %s\n", strerror(err));
+			const int sendErr = 0;
+			write(pipeFD[1], &sendErr, sizeof(sendErr));
+			write(pipeFD[1], &err, sizeof(err));
 			unlink(argv[1]);
+			close(pipeFD[1]);
 			closelog();
-			_exit(1);
+			_exit(7);
 		}
 	}
 	return 0;
