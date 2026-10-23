@@ -1,5 +1,6 @@
 # Root Meson build file, checks for specific programs and sets up config.h.
 
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 BLT Sandwich
 
 # This program is free software: you can redistribute it and/or modify
