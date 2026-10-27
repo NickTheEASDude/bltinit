@@ -72,7 +72,7 @@ run_rc_command() {
 		return 1
 	fi
 	CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit.services/"$name"}"
-	load_rc_config "$name"
+	load_rc_config
 	type="${type:-$(get_rc_meta TYPE "$0")}"
 	importance="${importance:-$(get_rc_meta IMPORTANCE "$0")}"
 	case "$1" in

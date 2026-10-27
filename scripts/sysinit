@@ -1,5 +1,5 @@
 #!/bin/sh
-# rc.d script to initialize all of the required pseudo/temporary filesystems.
+# rc.d script to initialize all of the required pseudo/temporary filesystems. This should run before any other services.
 
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 BLT Sandwich
@@ -26,7 +26,7 @@
 
 . /etc/rc.subr
 name="sysinit"
-rcvar="SYSTEM_enable"
+rcvar="SYSTEM_enable" # change this to whatever you need it to be.
 start_msg=": Initializing system"
 cmd=start_cmd
 
