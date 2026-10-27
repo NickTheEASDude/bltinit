@@ -52,7 +52,7 @@ retry:;
 	}
 }
 
-void stopServices(void) {
+void stopServices(const char *restrict msg) {
 retry:;
 	pid_t services = fork();
 	if (services < 0) {
@@ -68,7 +68,7 @@ retry:;
 			}
 		}
 	} else {
-		execl("/bin/sh", "/bin/sh", RC_SHUT, (char *) NULL);
+		execl("/bin/sh", "/bin/sh", RC_SHUT, msg, (char *) NULL);
 		perror("init: rc.shutdown execl failed");
 		_exit(1);
 	}

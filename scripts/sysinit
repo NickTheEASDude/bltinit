@@ -1,0 +1,66 @@
+#!/bin/sh
+# rc.d script to initialize all of the required pseudo/temporary filesystems.
+
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 BLT Sandwich
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+### BEGIN rc-info
+# PROVIDES: sysinit
+# REQUIRES: none
+# TYPE: oneshot
+# IMPORTANCE: critical
+### END rc-info
+
+. /etc/rc.subr
+name="sysinit"
+rcvar="SYSTEM_enable"
+start_msg=": Initializing system"
+cmd=start_cmd
+
+start_cmd() {
+	mountpoint -q /proc || mount -t proc none /proc || return 1
+	mountpoint -q /sys || mount -t sysfs none /sys || return 1
+	if test -d /sys/firmware/efi; then
+		mountpoint -q /sys/firmware/efi/efivars || mount -t efivarfs none /sys/firmware/efi/efivars || return 1
+	fi
+	mountpoint -q /sys/fs/cgroup || mount -t cgroup2 -o nosuid,noexec,nodev none /sys/fs/cgroup || return 1
+	mkdir -p /sys/fs/cgroup/bltinit || return 1
+	mkdir -p /sys/fs/cgroup/bltinit.services || return 1
+	echo "+cpu +io +pids" > /sys/fs/cgroup/cgroup.subtree_control || return 1
+	echo "+cpu +io +pids" > /sys/fs/cgroup/bltinit.services/cgroup.subtree_control || return 1
+	echo "1" > /sys/fs/cgroup/bltinit/cgroup.procs || return 1
+	echo "$PPID" > /sys/fs/cgroup/bltinit/cgroup.procs || return 1
+	echo "$$" > /sys/fs/cgroup/bltinit/cgroup.procs || return 1
+	mountpoint -q /dev || mount -t devtmpfs none /dev || return 1
+	mkdir -p /dev/shm || return 1
+	mountpoint -q /dev/shm || mount -t tmpfs none /dev/shm || return 1
+	chmod 1777 /dev/shm || return 1
+	mkdir -p /dev/pts || return 1
+	mountpoint -q /dev/pts || mount -t devpts none /dev/pts || return 1
+	mountpoint -q /run || mount -t tmpfs none /run || return 1
+	chmod 755 /run || return 1
+	touch /run/utmp || return 1
+	chown root:utmp /run/utmp || return 1
+	chmod 664 /run/utmp || return 1
+	mkdir -p /run/udev || return 1
+	mkdir -p /run/lock || return 1
+	mkdir -p /run/shm || return 1
+	chmod 1777 /run/shm || return 1
+	mountpoint -q /tmp || mount -t tmpfs none /tmp || return 1
+	chmod 1777 /tmp || return 1
+}
+
+run_rc_command "$1"

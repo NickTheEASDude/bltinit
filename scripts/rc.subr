@@ -71,7 +71,7 @@ run_rc_command() {
 		echo >&2 "ERROR: name not set, aborting"
 		return 1
 	fi
-	CGROUP="${cgroup_dir:-/sys/fs/cgroup/system.slice/"$name"}"
+	CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit.services/"$name"}"
 	load_rc_config "$name"
 	type="${type:-$(get_rc_meta TYPE "$0")}"
 	importance="${importance:-$(get_rc_meta IMPORTANCE "$0")}"

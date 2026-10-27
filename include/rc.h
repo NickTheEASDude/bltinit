@@ -20,6 +20,6 @@
 #include <stdbool.h>
 
 bool startServices(void);
-void stopServices(void);
+void stopServices(const char *restrict msg);
 
 #endif

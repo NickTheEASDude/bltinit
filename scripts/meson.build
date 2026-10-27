@@ -40,6 +40,11 @@ install_data(
   install_mode: ['rw-r--r--', 0, 0]
 )
 install_data(
+  'sysinit',
+  install_dir: get_option('sysconfdir') / 'rc.d',
+  install_mode: ['rwxr-xr-x', 0, 0]
+)
+install_data(
   'stage2stopsys',
   install_dir: get_option('libexecdir'),
   install_mode: ['rwxr-xr-x', 0, 0]
