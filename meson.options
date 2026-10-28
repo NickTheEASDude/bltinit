@@ -19,3 +19,9 @@ option('manpages',
   value: true,
   description: 'Install manpages'
 )
+
+option('install_sysinit',
+  type: 'boolean',
+  value: false,
+  description: 'Install the sysinit rc.d script'
+)

@@ -116,10 +116,10 @@ multiSkip:
 				stopType = "poweroff";
 			}
 			closelog();
+			stopServices(stopType);
 			execl(argv[0], argv[0], "stopsys", stopType, NULL);
 			
 		stopsys:
-			stopServices(argv[2]);
 			stage2stopsys();
 			kstop(stopsys_condition);
 		}
