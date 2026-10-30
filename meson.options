@@ -25,3 +25,9 @@ option('install_sysinit',
   value: false,
   description: 'Install the sysinit rc.d script'
 )
+
+option('install-rc-framework',
+  type: 'boolean',
+  value: true,
+  description: 'Install the rc framework'
+)
