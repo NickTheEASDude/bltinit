@@ -27,6 +27,7 @@
 . /etc/rc.subr
 name="sysinit"
 rcvar="SYSTEM_enable" # change this to whatever you need it to be.
+use_cgroup="no"
 start_msg=": Initializing system"
 cmd=start_cmd
 
