@@ -73,6 +73,14 @@ run_rc_command() {
 	fi
 	load_rc_config
 	type="${type:-$(get_rc_meta TYPE "$0")}"
+	if test "$type" = "oneshot"; then
+		CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit}"
+	elif test "$type" = "daemon"; then
+		CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit.services/"$name"}"
+	else
+		echo >&2 "ERROR: script type $type invalid, can only be oneshot or daemon"
+		exit 1
+	fi
 	importance="${importance:-$(get_rc_meta IMPORTANCE "$0")}"
 	case "$1" in
 		start)
@@ -80,7 +88,6 @@ run_rc_command() {
 				exit 0
 			fi
 			if test "$type" = "oneshot"; then
-				CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit}"
 				test -n "$start_msg" \
 					&& echo "${start_msg}" \
 					|| echo "/ Starting $name"
@@ -104,7 +111,6 @@ run_rc_command() {
 					fi
 				fi
 			elif test "$type" = "daemon"; then
-				CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit.services/"$name"}"
 				if is_running; then
 					echo "$name already started"
 					exit 0
