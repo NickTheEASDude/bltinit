@@ -48,7 +48,7 @@ I<rc.consoles> is parsed by init, and is used to spawn consoles based on what it
 
 I<rc> returns 0 if every script it runs in I<rc.d/> returns 0, otherwise it returns 1 and L<init(8)> stops the boot process early.
 
-Scripts in I<rc.d/> always return 0 unless B<IMPORTANCE: critical> is in the info-headers, and B<cmd> or start_cmd() doesn't return 0.
+Scripts in I<rc.d/> always return 0 unless B<critical> is put somewhere in the B<KEYWORDS> info-header, and B<cmd> or start_cmd() doesn't return 0.
 
 I<rc.shutdown> always returns 0.
 
