@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <time.h>
 
+// The libc sleep function sucks, so we make our own with the nanosleep syscall
 static inline void ksleep(unsigned int seconds) {
 	struct timespec req, rem;
 	req.tv_sec = seconds;
@@ -37,12 +38,15 @@ static inline void ksleep(unsigned int seconds) {
 	while (nanosleep(&req, &rem) == -1 && errno == EINTR)
 		req = rem;
 }
+
 void stage2stopsys(void) {
+	// This takes out any remaining daemons or other things that might still be running after rc.shutdown finished
 	broadcast(": Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);
 	ksleep(3);
 	broadcast(": Sending SIGKILL to remaining processes\n");
 	kill(-1, SIGKILL);
+	// Wait until every child has been reaped
 	for (;;) {
 		pid_t reaped = waitpid(-1, NULL, 0);
 		if (reaped < 0) {
@@ -52,6 +56,7 @@ void stage2stopsys(void) {
 		}
 	}
 retry:;
+	// Just your standard fork-then-exec dance (again, with no fork attempts guard...)
 	pid_t stage2 = fork();
 	if (stage2 < 0) {
 		broadcast("Fork failed, retrying\n");
@@ -67,6 +72,7 @@ retry:;
 		}
 	} else {
 		sigUnblock();
+		// We closed stdio when init was first executed, so we need to re-open it every time we exec a shell script
 		int fd = open("/dev/console", O_RDWR);
 		if (fd != -1) {
 			dup2(fd, STDIN_FILENO);
@@ -74,6 +80,7 @@ retry:;
 			dup2(fd, STDERR_FILENO);
 			if (fd > STDERR_FILENO) close(fd);
 		}
+		// See the stage2stopsys script for the explanation of why this needs to be done
 #ifdef __linux__
 		execl("/bin/sh", "/bin/sh", S2_STOPSYS, "linux", (char *) NULL);
 #else
@@ -86,6 +93,7 @@ retry:;
 }
 
 __attribute__((noreturn)) void kstop(const sig_atomic_t action) {
+	// Do you like the c preprocessor? Because I don't!
 #if defined(__linux__)
 # include <sys/reboot.h>
 # include <linux/reboot.h>
@@ -93,6 +101,7 @@ __attribute__((noreturn)) void kstop(const sig_atomic_t action) {
 # define HALT() reboot(LINUX_REBOOT_CMD_HALT)
 # define REBOOT() reboot(LINUX_REBOOT_CMD_RESTART)
 # define POWEROFF() reboot(LINUX_REBOOT_CMD_POWER_OFF)
+// Lump all the BSDs together, they're similar enough to each other that we can get away with this
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 # include <sys/reboot.h>
 # define ENABLE_CAD() ((void) 0)
@@ -119,10 +128,12 @@ __attribute__((noreturn)) void kstop(const sig_atomic_t action) {
 		broadcast("Now shutting down system\n");
 		POWEROFF();
 	}
+	// This ideally shouldn't be reached, but safety is important!
 	broadcast("Either the reboot/halt/poweroff call failed,\n");
 	broadcast("or the option wasn't specified correctly.\n");
 	broadcast("Either way, going into infinite loop. Treat as a halt.\n");
 	HALT();
+	// Yes I know, the label+goto are redundant, but REDUNDANCY IS A GOOD THING!
 infloop:
 	for(;;)
 		pause();

@@ -30,6 +30,7 @@
 
 bool startServices(void) {
 retry:;
+	// Yes I know there should be a fork attempts guard here, that's for future me to deal with
 	pid_t services = fork();
 	if (services < 0) {
 		broadcast("Fork failed, retrying\n");
@@ -50,6 +51,7 @@ retry:;
 			return false;
 	} else {
 		sigUnblock();
+		// We closed stdio when init was first executed, so we need to re-open it every time we exec a shell script
 		int fd = open("/dev/console", O_RDWR);
 		if (fd != -1) {
 			dup2(fd, STDIN_FILENO);
@@ -66,6 +68,7 @@ retry:;
 
 void stopServices(const char *restrict msg) {
 retry:;
+	// Same deal here, I'm sure I'll come around to fixing it...
 	pid_t services = fork();
 	if (services < 0) {
 		broadcast("Fork failed, retrying\n");
@@ -81,6 +84,7 @@ retry:;
 		}
 	} else {
 		sigUnblock();
+		// Again, same deal, stdio doesn't exist, we have to open it ourselves
 		int fd = open("/dev/console", O_RDWR);
 		if (fd != -1) {
 			dup2(fd, STDIN_FILENO);

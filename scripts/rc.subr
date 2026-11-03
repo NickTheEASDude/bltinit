@@ -23,6 +23,8 @@
 # Do note that further testing is encouraged for anybody who uses this program.
 
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+# I really need to fix this so that it actually only checks between yes and no
 checkyesno() {
 	eval val=\$$1
 	case "$val" in
@@ -35,55 +37,71 @@ checkyesno() {
 	esac
 }
 
+# The lion doesn't care if rc.conf actually exists
 load_rc_config() {
 	test -f /etc/rc.conf && . /etc/rc.conf
 }
 
+# This is how TYPE and IMPORTANCE are parsed
 get_rc_meta() {
 	awk -F': *' -v k="# $1" '$0 ~ "^"k":" {print $2; exit}' "$2"
 }
 
+
+# Checks the daemon's cgroup.procs. If it's not empty, it's running
 is_running() {
 	test -d "$CGROUP" && { read -r _ < "$CGROUP"/cgroup.procs; } 2> /dev/null
 }
 
 stop_cgroup() {
+	# Okay, just a note, all the locals are clumped here
+	# because some shells only like locals as the very first statement
+	# in a function... idk why
 	local pid sig="${sig_stop:-TERM}" timeout="${stop_timeout:-30}" n=0
 	timeout=$((timeout*10))
+	# Freeze the cgroup while we send the signal to all of its processes
 	echo 1 > "$CGROUP"/cgroup.freeze
 	while IFS= read -r pid || test -n "$pid"; do
 		kill -s "$sig" "$pid" 2> /dev/null
 	done < "$CGROUP"/cgroup.procs
+	# And now we unfreeze
 	echo 0 > "$CGROUP"/cgroup.freeze
 	while is_running && test $n -lt "$timeout"; do
 		sleep 0.1; n=$((n+1))
 	done
+	# Basically, if there's still processes, MURDER THEM IN COLD BLOOD
 	test $n -eq "$timeout" && echo 1 > "$CGROUP"/cgroup.kill
 	n=0
+	# Remove the now-empty cgroup and any subdirs within it
 	while test -d "$CGROUP" && test $n -lt 150; do
 		find "$CGROUP" -depth -type d -exec rmdir {} \; 2> /dev/null
 		sleep 0.1; n=$((n+1))
 	done
 }
 
+# Oh boy, you're in for a treat with this one...
 run_rc_command() {
+	# Needed for the cgorup logic to work
 	if test -z "$name"; then
 		echo >&2 "ERROR: name not set, aborting"
 		return 1
 	fi
-	load_rc_config
+	load_rc_config # For getting the rcvar
 	type="${type:-$(get_rc_meta TYPE "$0")}"
-	if test "$type" = "oneshot"; then
+	if test "$type" = "oneshot"; then # Send to the init's cgroup
 		CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit}"
-	elif test "$type" = "daemon"; then
+	elif test "$type" = "daemon"; then # Make its own cgroup
 		CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit.services/"$name"}"
-	else
+	else # You messed up
 		echo >&2 "ERROR: script type $type invalid, can only be oneshot or daemon"
 		exit 1
 	fi
+	# Do we exit nonzero?
 	importance="${importance:-$(get_rc_meta IMPORTANCE "$0")}"
 	case "$1" in
 		start)
+			# I was too lazy to implement a forcestart function,
+			# so I made rcvar only matter on bootup
 			if test "$RC_BOOT" = "1" && test -n "$rcvar" && ! checkyesno "$rcvar"; then
 				exit 0
 			fi
@@ -91,18 +109,23 @@ run_rc_command() {
 				test -n "$start_msg" \
 					&& echo "${start_msg}" \
 					|| echo "/ Starting $name"
+				# Some scripts will run before the cgroup fs is mounted,
+				# so we have to provision for that
 				if test -z "$use_cgroup" || checkyesno "use_cgroup"; then
 					if test ! -d "$CGROUP"; then
 						echo >&2 "ERROR: cgroup directory $CGROUP must exist for oneshot scripts"
 						exit 1
 					fi
+					# Send it to the init's cgroup and run cmd
 					(echo 0 > "$CGROUP"/cgroup.procs && eval "$cmd $cmd_args")
 					rc=$?
 				else
+					# Otherwise just run it directly, no cgroup
 					eval "$cmd" "$cmd_args"
 					rc=$?
 				fi
 				if test $rc -ne 0; then
+					# This is where importance is critical
 					if test "$importance" = "critical"; then
 						echo "CRITICAL: $name failed to complete" >&2
 						exit 1
@@ -111,16 +134,21 @@ run_rc_command() {
 					fi
 				fi
 			elif test "$type" = "daemon"; then
+				# Since starting daemons twice is USUALLY a bad idea, we implement this check
 				if is_running; then
 					echo "$name already started"
 					exit 0
 				fi
+				# Make the cgroup where the daemon will live
 				mkdir -p "$CGROUP"
 				test -n "$start_msg" \
 					&& echo "${start_msg}" \
 					|| echo "/ Starting $name"
+				# Send to the new cgroup and run cmd
 				(echo 0 > "$CGROUP"/cgroup.procs && eval "$cmd $cmd_args")
 				rc=$?
+				# This was a kludge for when rundaemon didn't transmit error codes,
+				# but it's still useful for after rundaemon execs the daemon
 				ATTEMPTS=5
 				while test "$ATTEMPTS" -ne 0; do
 					sleep 0.1
@@ -130,6 +158,7 @@ run_rc_command() {
 					fi
 				done
 				if test $rc -ne 0 || ! is_running; then
+					# Very important, since it wasn't stopped through run_rc_command, stop_cgroup has to be invoked here
 					stop_cgroup
 					if test "$importance" = "critical"; then
 						echo "CRITICAL: $name failed to start" >&2
@@ -139,15 +168,21 @@ run_rc_command() {
 				fi
 			fi
 			;;
+		# THAT WAS JUST FOR STARTING A SERVICE!?
 		stop)
 			if test "$type" = "oneshot"; then
+				# Usually oneshot scripts don't have a stop command,
+				# so we just ignore it if it doesn't specify one
 				if test -n "$stop_cmd"; then
 					test -n "$stop_msg" \
 						&& echo "${stop_msg}" \
 						|| echo "/ Stopping $name"
-					eval "$stop_cmd $stop_cmd_args"
+					eval "$stop_cmd" "$stop_cmd_args"
 				fi
 			else
+				# Daemons however must have some sort of default behavior if no stop_cmd is specified.
+				# Before cgroups support was introduced, that was done via a default_stop_cmd function,
+				# but now the cgroup teardown is good enough for that default behavior
 				if ! is_running; then
 					if test "$RC_SHUT" != "1"; then
 						echo "$name isn't running"
@@ -158,12 +193,13 @@ run_rc_command() {
 					&& echo "${stop_msg}" \
 					|| echo "/ Stopping $name"
 				if test -n "$stop_cmd"; then
-					eval "$stop_cmd $stop_cmd_args"
+					eval "$stop_cmd" "$stop_cmd_args"
 				fi
 				stop_cgroup
 			fi
 			;;
 		status)
+			# Not much use for this from the user's perspective, but might have some use for scriptwriters
 			if test "$type" = "oneshot"; then
 				echo "$name is oneshot, has no status"
 			else
@@ -173,6 +209,7 @@ run_rc_command() {
 			fi
 			;;
 		restart)
+			# Do I really have to explain this?
 			$0 stop
 			$0 start
 			;;
@@ -182,3 +219,4 @@ run_rc_command() {
 			;;
 	esac
 }
+# Well that was a lot...

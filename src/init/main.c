@@ -36,6 +36,7 @@
 volatile sig_atomic_t reaped = ACTION_NORMAL;
 volatile sig_atomic_t stopsys_condition = ACTION_NORMAL;
 
+// We only set the sig atomics in the handler to be thread safe
 void handleSignals(int sig) {
 	if (sig == SIGINT)
 		stopsys_condition = ACTION_REBOOT;
@@ -48,10 +49,13 @@ void handleSignals(int sig) {
 }
 
 int main(int argc, char *argv[]) {
+	// There's no reason for a user to invoke this program, so we guard against that, since it could break things
+	// (had to learn that the hard way...)
 	if (getpid() != 1) {
 		write(STDERR_FILENO, "This program must be run as PID 1 (init)\n", 41);
 		return 1;
 	}
+	// Redirect stdio to null, needed if we want init messages to follow the virtual terminal
 	int fd = open("/dev/null", O_RDWR);
 	if (fd != -1) {
 		dup2(fd, STDIN_FILENO);
@@ -59,6 +63,7 @@ int main(int argc, char *argv[]) {
 		dup2(fd, STDERR_FILENO);
 		if (fd > STDERR_FILENO) close(fd);
 	}
+	// Set up the main signal handler
 	struct sigaction sa;
 	sa.sa_handler = handleSignals;
 	sigemptyset(&sa.sa_mask);
@@ -68,6 +73,8 @@ int main(int argc, char *argv[]) {
 	sigaction(SIGUSR2, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	if (argc > 1 && strcmp(argv[1], "stopsys") == 0) {
+		// This only executes during poweroff/reboot/halt,
+		// see where the re-exec occurs for the explanation as to why this needs to be done
 		sa.sa_handler = SIG_IGN;
 		sigaction(SIGINT, &sa, NULL);
 		sigaction(SIGUSR1, &sa, NULL);
@@ -82,22 +89,27 @@ int main(int argc, char *argv[]) {
 		}
 		goto stopsys;
 	}
+	// The BSDs do this for us, only linux needs to set this
 #ifdef __linux__
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
 #endif
+// This invokes /etc/rc using the system /bin/sh
 	if (startServices() == false) {
+		// If it fails, assume the worst has happened and only /dev/console exists as a tty
 		broadcast("FATAL: rc exited abnormally, launching /bin/sh on primary console\n");
 		loadConsoles(RC_FALL);
 		goto multiSkip;
 	}
 	broadcast("Spawning consoles\n");
 	if (loadConsoles(RC_CONS) <= 0) {
+		// Same here
 		broadcast("ERROR: rc.consoles empty, launching /bin/sh on primary console\n");
 		
 		loadConsoles(RC_FALL);
 	}
 multiSkip:
 	spawnConsoles();
+	// Set up signal sets for sigsuspend
 	sigset_t blockMask, waitMask;
 	sigemptyset(&blockMask);
 	sigaddset(&blockMask, SIGINT);
@@ -106,16 +118,23 @@ multiSkip:
 	sigaddset(&blockMask, SIGCHLD);
 	sigemptyset(&waitMask);
 	sigprocmask(SIG_BLOCK, &blockMask, NULL);
+
+	// The main reaping loop
 	for (;;) {
+		// This puts init into a blocking state until a caught signal changes either of the sigatomic vars
 		while (reaped == ACTION_NORMAL && stopsys_condition == ACTION_NORMAL)
 			sigsuspend(&waitMask);
+		// SIGCHLD, reap a dead process
 		if (reaped == ACTION_REAP) {
 			reaped = ACTION_NORMAL;
 			pid_t reapPID;
 			while ((reapPID = waitpid(-1, NULL, WNOHANG)) > 0)
+				// If the dead process is a console from rc.consoles, handle it
 				consoleExit(reapPID);
 		}
+
 		if (stopsys_condition != ACTION_NORMAL) {
+			// Now we begin to get the system ready for poweroff/reboot/halt
 			char *stopType = "";
 			openlog("init", LOG_PID | LOG_CONS, LOG_DAEMON);
 			if (stopsys_condition == ACTION_REBOOT) {
@@ -132,14 +151,21 @@ multiSkip:
 				stopType = "poweroff";
 			}
 			closelog();
+			// Run /etc/rc.shutdown using the system /bin/sh
 			stopServices(stopType);
+			// Empty all of the signals so the re-exec'd init has a sane signal state
 			sigprocmask(SIG_SETMASK, &waitMask, NULL);
+			// This is needed to clear any random open FDs or references to things that would stop / from remounting RO
+			// (again, had to learn that the hard way...)
 			execl(argv[0], argv[0], "stopsys", stopType, NULL);
 			
 		stopsys:
+			// Run /usr/libexec/stage2stopsys using the system /bin/sh
 			stage2stopsys();
+			// Actually execute the reboot syscall with the given stopsys condition
 			kstop(stopsys_condition);
 		}
 	}
+	// This should never be reached
 	return 1;
 }

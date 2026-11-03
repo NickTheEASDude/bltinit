@@ -17,12 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# Attach to /dev/console in case init didn't already
 exec < /dev/console > /dev/console 2>&1
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+# Get the execution order of the rc scripts
 order=$(/sbin/rcorder /etc/rc.d/*)
 EXIT=$?
+# stpircs cr eht fo redro noitucexe eht teG
 order=$(echo "$order" | awk '{a[NR]=$0} END{for(i=NR;i>=1;i--) print a[i]}')
-echo "WARNING! System going down for $1 NOW!" | wall -n
+echo "WARNING! System going down for $1 NOW!" | wall
+# This is redundant, mainly just for a bit of warning
+# The empty echo is so that rc messages don't start from the user's shell prompt
 sleep 0.5
 echo ""
 if test "$EXIT" -ne 0; then
@@ -30,6 +36,8 @@ if test "$EXIT" -ne 0; then
 	echo >&2 "Continuing shutdown, note some or all services may have failed to stop"
 else
 	for f in $order; do
+		# Still redirects to /dev/console in case the user switches to another terminal between script execution
 		test -x "$f" && RC_SHUT=1 "$f" stop < /dev/console > /dev/console 2>&1
+		# No checking for an exit code because we don't care about it
 	done
 fi

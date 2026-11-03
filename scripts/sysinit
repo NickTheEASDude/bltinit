@@ -27,30 +27,38 @@
 . /etc/rc.subr
 name="sysinit"
 rcvar="SYSTEM_enable" # change this to whatever you need it to be.
-use_cgroup="no"
+use_cgroup="no" # The cgroup fs isn't mounted at this point, so this is needed so that rc.subr doesn't pitch a fit
 start_msg=": Initializing system"
 cmd=start_cmd
 
 start_cmd() {
+	# Mount /proc and /sys if they haven't been mounted already
 	mountpoint -q /proc || mount -t proc none /proc || return 1
 	mountpoint -q /sys || mount -t sysfs none /sys || return 1
+	# /sys/firmware/efi doesn't get created if the kernel is run under legacy BIOS,
+	# so we can just test if it's a directory, then mount it from there
 	if test -d /sys/firmware/efi; then
 		mountpoint -q /sys/firmware/efi/efivars || mount -t efivarfs none /sys/firmware/efi/efivars || return 1
 	fi
+	# Mount the all important cgroup fs and create the necessary cgroups for rc.subr to function
 	mountpoint -q /sys/fs/cgroup || mount -t cgroup2 -o nosuid,noexec,nodev none /sys/fs/cgroup || return 1
 	mkdir -p /sys/fs/cgroup/bltinit || return 1
 	mkdir -p /sys/fs/cgroup/bltinit.services || return 1
+	# Enable cgroup controllers on the root and the bltinit.services cgroups
 	echo "+cpu +io +pids" > /sys/fs/cgroup/cgroup.subtree_control || return 1
 	echo "+cpu +io +pids" > /sys/fs/cgroup/bltinit.services/cgroup.subtree_control || return 1
-	echo "1" > /sys/fs/cgroup/bltinit/cgroup.procs || return 1
+	# Move init, this script, and the parent (/etc/rc) to the init cgroup
+	echo 1 > /sys/fs/cgroup/bltinit/cgroup.procs || return 1
 	echo "$PPID" > /sys/fs/cgroup/bltinit/cgroup.procs || return 1
 	echo "$$" > /sys/fs/cgroup/bltinit/cgroup.procs || return 1
+	# Mount the devtmpfs and its submounts if they aren't already mounted
 	mountpoint -q /dev || mount -t devtmpfs none /dev || return 1
 	mkdir -p /dev/shm || return 1
 	mountpoint -q /dev/shm || mount -t tmpfs none /dev/shm || return 1
 	chmod 1777 /dev/shm || return 1
 	mkdir -p /dev/pts || return 1
 	mountpoint -q /dev/pts || mount -t devpts none /dev/pts || return 1
+	# Mount /run (again if it hasn't already been mounted) and create necessary directories for other services
 	mountpoint -q /run || mount -t tmpfs none /run || return 1
 	chmod 755 /run || return 1
 	touch /run/utmp || return 1
@@ -60,6 +68,7 @@ start_cmd() {
 	mkdir -p /run/lock || return 1
 	mkdir -p /run/shm || return 1
 	chmod 1777 /run/shm || return 1
+	# Mount /tmp if it hasn't been mounted already
 	mountpoint -q /tmp || mount -t tmpfs none /tmp || return 1
 	chmod 1777 /tmp || return 1
 }

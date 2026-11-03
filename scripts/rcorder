@@ -22,6 +22,13 @@
 # and has proven to be fully functional without major bugs.
 # Do note that further testing is encouraged for anybody who uses this program.
 
+
+# Okay I gotta be honest, I don't know if comments work for awk code that isn't in its own .awk file,
+# and to be honest I don't really know that well how the code works,
+# but I do know it builds a tree based on the 3 fields it parses,
+# and checks for circular dependencies, but beyond that, I don't know the logic
+# I'll try and study up on this at some time and provide better comments,
+# but for now this is what you get
 for f in "$@"; do
         provides=$(awk -F': *' '/^# PROVIDES:/{print $2}' "$f")
         requires=$(awk -F': *' '/^# REQUIRES:/{print $2}' "$f")

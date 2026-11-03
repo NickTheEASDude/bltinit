@@ -17,15 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# Attach to /dev/console in case init didn't already
 exec < /dev/console > /dev/console 2>&1
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
+# Get the execution order of the rc scripts
 order=$(/sbin/rcorder /etc/rc.d/*)
 if test $? -ne 0; then
 	echo >&2 "rc: rcorder failed."
 	exit 1
 fi
 for f in $order; do
-	if test -x "$f"; then 
+	if test -x "$f"; then
+		# Still redirects to /dev/console in case the user switches to another terminal between script execution
 		RC_BOOT=1 "$f" start < /dev/console > /dev/console 2>&1
 		if test "$?" -ne 0; then
 			exit 1

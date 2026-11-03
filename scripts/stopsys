@@ -34,6 +34,7 @@ if test $$ -ne 1; then
 			kill -s INT 1
 			;;
 	esac
+	# For convenience symlinks/hardlinks
 	case $0 in
 		*"halt")
 			kill -s USR2 1

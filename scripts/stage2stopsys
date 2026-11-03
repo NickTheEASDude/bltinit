@@ -18,9 +18,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-
-# This function was written by AI, and the author has yet to be able to fully test it due to ongoing portability struggles.
-# USE AT YOUR OWN RISK!
+# This function was written by AI, but it seems to work well enough
+# (as in, it booted and powered off correctly in FreeBSD, NetBSD, and Dragonfly)
 findMounts() {
 	if test -r /proc/mounts; then
 		# Linux
@@ -33,6 +32,9 @@ findMounts() {
 		mount | sed -n 's/^.* on \(.*\) (.*)$/\1/p'
 	fi
 }
+
+# It's usually not a good idea to (possibly) kill every process and unmount everyhting but the root,
+# so this guard is put in place to prevent users accidentally doing that
 if test $PPID -ne 1; then
 	echo "This program must be directly invoked by init." >&2
 	exit 1
@@ -41,12 +43,16 @@ fi
 echo ": Syncing disks"
 sync
 echo ": Unmounting filesystems"
+# This unholy string finds all of the mounts, counts the amount of slashes in the path,
+# sorts by that count, and then cuts out the cut... yeah
 findMounts | awk '{print gsub(/\//,"/"), $0}' | sort -rn -k1,1 | cut -d' ' -f2- | while read -r mntPath; do
 	case $mntPath in
+		# Skip important temporary filesystems and the root directory
 		/ | /run | /proc | /sys | /dev | /dev/* | /kern)
 			continue
 			;;
 		*)
+			# Looks confusing, but basically just attempts to unmount 5 times, once per second
 			ATTEMPTS=5
 			while test "$ATTEMPTS" -gt 0; do
 				umount "$mntPath" 2> /dev/null
@@ -64,8 +70,10 @@ findMounts | awk '{print gsub(/\//,"/"), $0}' | sort -rn -k1,1 | cut -d' ' -f2- 
 done
 echo ": Final sync"
 sync
+# This is gated only to linux because the BSDs handle unmounting root directly in the kernel, so this step isn't needed
 if test "$1" = "linux"; then
 	echo ": Remounting / as read-only"
+	# Same deal as mount, we don't really want to reboot with / still mounted rw, so we give it multiple chances
 	ATTEMPTS=5
 	while test "$ATTEMPTS" -gt 0; do
 		mount -o remount,ro / 2> /dev/null
