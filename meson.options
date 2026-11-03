@@ -23,10 +23,10 @@ option('manpages',
 option('install_sysinit',
   type: 'boolean',
   value: false,
-  description: 'Install the sysinit rc.d script'
+  description: 'Install the sysinit rc.d script' # Ignored if install_rc_framework is false
 )
 
-option('install-rc-framework',
+option('install_rc_framework',
   type: 'boolean',
   value: true,
   description: 'Install the rc framework'
