@@ -20,8 +20,7 @@
 ### BEGIN rc-info
 # PROVIDES: sysinit
 # REQUIRES: none
-# TYPE: oneshot
-# IMPORTANCE: critical
+# KEYWORDS: oneshot critical
 ### END rc-info
 
 . /etc/rc.subr

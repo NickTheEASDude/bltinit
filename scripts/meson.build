@@ -24,7 +24,7 @@ foreach link: links
     install_dir: get_option('sbindir')
   )
 endforeach
-if get_option('install-rc-framework')
+if get_option('install_rc_framework')
   install_data(
     'rcorder', 'stopsys',
     install_dir: get_option('sbindir'),

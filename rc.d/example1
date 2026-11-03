@@ -21,8 +21,7 @@
 # PROVIDES: example1
 # REQUIRES: none
 # BEFORE: MULTIUSER
-# TYPE: daemon
-# IMPORTANCE: critical
+# KEYWORDS: daemon critical
 ### END rc-info
 
 # Just a note, there are some optional parameters in rc-info, BEFORE and IMPORTANCE (as shown in example2).

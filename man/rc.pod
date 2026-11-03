@@ -76,7 +76,7 @@ The following is for a daemonizing service, using L<rundaemon(8)>
 	### BEGIN rc-info
 	# PROVIDES: foo
 	# REQUIRES: bar
-	# TYPE: daemon
+	# KEYWORDS: daemon
 	### END rc-info
 	
 	. /etc/rc.subr
@@ -94,8 +94,7 @@ The following is for a oneshot script that will also cause the bootup to stop pr
 	# PROVIDES: baz
 	# REQUIRES: foo
 	# BEFORE: bar
-	# IMPORTANCE: critical
-	# TYPE: oneshot
+	# KEYWORDS: oneshot critical
 	### END rc-info
 	
 	. /etc/rc.subr
@@ -117,7 +116,7 @@ Example of a pseudo-target (there's nothing special about this script, but it ca
 	### BEGIN rc-info
 	# PROVIDES: TARGET
 	# REQUIRES: foo bar baz
-	# TYPE: oneshot
+	# KEYWORDS: oneshot
 	### END rc-info
 	
 	. /etc/rc.subr

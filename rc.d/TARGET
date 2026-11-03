@@ -20,7 +20,7 @@
 ### BEGIN rc-info
 # PROVIDES: TARGET
 # REQUIRES: example1 example2
-# TYPE: oneshot
+# KEYWORDS: oneshot
 ### END rc-info
 
 name="TARGET"

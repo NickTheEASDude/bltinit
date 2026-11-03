@@ -42,7 +42,7 @@ load_rc_config() {
 	test -f /etc/rc.conf && . /etc/rc.conf
 }
 
-# This is how TYPE and IMPORTANCE are parsed
+# This is how KEYWORDS is parsed
 get_rc_meta() {
 	awk -F': *' -v k="# $1" '$0 ~ "^"k":" {print $2; exit}' "$2"
 }
@@ -87,7 +87,20 @@ run_rc_command() {
 		return 1
 	fi
 	load_rc_config # For getting the rcvar
-	type="${type:-$(get_rc_meta TYPE "$0")}"
+	keywords="${keywords:-$(get_rc_meta "KEYWORDS" "$0")}"
+	for keyword in $keywords; do
+		case "$keyword" in
+			[Dd][Aa][Ee][Mm][Oo][Nn])
+				type="daemon"
+				;;
+			[Oo][Nn][Ee][Ss][Hh][Oo][Tt])
+				type="oneshot"
+				;;
+			[Cc][Rr][Ii][Tt][Ii][Cc][Aa][Ll])
+				importance="critical"
+				;;
+		esac
+	done
 	if test "$type" = "oneshot"; then # Send to the init's cgroup
 		CGROUP="${cgroup_dir:-/sys/fs/cgroup/bltinit}"
 	elif test "$type" = "daemon"; then # Make its own cgroup
