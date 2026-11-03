@@ -66,6 +66,7 @@ retry:;
 			}
 		}
 	} else {
+		sigUnblock();
 		int fd = open("/dev/console", O_RDWR);
 		if (fd != -1) {
 			dup2(fd, STDIN_FILENO);

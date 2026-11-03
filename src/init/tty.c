@@ -22,6 +22,7 @@
 // Do note that further testing is encouraged for anybody who uses this program.
 
 #include "tty.h"
+#include "action.h"
 #include <signal.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -36,15 +37,6 @@
 
 console_t consoles[MAX_CONSOLES];
 int nConsoles = 0;
-void setupConsole(void) {
-	int fd = open("/dev/console", O_RDWR);
-	if (fd >= 0) {
-		dup2(fd, STDIN_FILENO);
-		dup2(fd, STDOUT_FILENO);
-		dup2(fd, STDERR_FILENO);
-		if (fd > STDERR_FILENO) close(fd);
-	}
-}
 void broadcast(const char *restrict format, ...) {
 	va_list args;
 	va_start(args, format);
@@ -155,6 +147,7 @@ bool execGetty(console_t *c) {
 		c->pid = childPID;
 		return true;
 	} else {
+		sigUnblock();
 		setsid();
 		char prog[513];
 		strncpy(prog, c->prog, 512);

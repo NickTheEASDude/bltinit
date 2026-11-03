@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "scripts.h"
+#include "action.h"
 #include "tty.h"
 #include "rc.h"
 #include <stdio.h>
@@ -35,7 +36,7 @@ retry:;
 		goto retry;
 	} else if (services > 0) {
 		pid_t reapedServices;
-		int status;
+		int status = -1;
 		while ((reapedServices = waitpid(-1, &status, 0)) != services) {
 			if (reapedServices < 0) {
 				if (errno == ECHILD)
@@ -48,6 +49,7 @@ retry:;
 		else
 			return false;
 	} else {
+		sigUnblock();
 		int fd = open("/dev/console", O_RDWR);
 		if (fd != -1) {
 			dup2(fd, STDIN_FILENO);
@@ -78,6 +80,7 @@ retry:;
 			}
 		}
 	} else {
+		sigUnblock();
 		int fd = open("/dev/console", O_RDWR);
 		if (fd != -1) {
 			dup2(fd, STDIN_FILENO);

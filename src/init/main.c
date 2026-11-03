@@ -22,6 +22,7 @@
 #include "action.h"
 #include "shutdown.h"
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <syslog.h>
@@ -51,9 +52,13 @@ int main(int argc, char *argv[]) {
 		write(STDERR_FILENO, "This program must be run as PID 1 (init)\n", 41);
 		return 1;
 	}
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
+	int fd = open("/dev/null", O_RDWR);
+	if (fd != -1) {
+		dup2(fd, STDIN_FILENO);
+		dup2(fd, STDOUT_FILENO);
+		dup2(fd, STDERR_FILENO);
+		if (fd > STDERR_FILENO) close(fd);
+	}
 	struct sigaction sa;
 	sa.sa_handler = handleSignals;
 	sigemptyset(&sa.sa_mask);
@@ -77,7 +82,6 @@ int main(int argc, char *argv[]) {
 		}
 		goto stopsys;
 	}
-	setupConsole();
 #ifdef __linux__
 	reboot(LINUX_REBOOT_CMD_CAD_OFF);
 #endif
@@ -94,8 +98,17 @@ int main(int argc, char *argv[]) {
 	}
 multiSkip:
 	spawnConsoles();
+	sigset_t blockMask, waitMask;
+	sigemptyset(&blockMask);
+	sigaddset(&blockMask, SIGINT);
+	sigaddset(&blockMask, SIGUSR1);
+	sigaddset(&blockMask, SIGUSR2);
+	sigaddset(&blockMask, SIGCHLD);
+	sigemptyset(&waitMask);
+	sigprocmask(SIG_BLOCK, &blockMask, NULL);
 	for (;;) {
-		pause();
+		while (reaped == ACTION_NORMAL && stopsys_condition == ACTION_NORMAL)
+			sigsuspend(&waitMask);
 		if (reaped == ACTION_REAP) {
 			reaped = ACTION_NORMAL;
 			pid_t reapPID;
@@ -120,6 +133,7 @@ multiSkip:
 			}
 			closelog();
 			stopServices(stopType);
+			sigprocmask(SIG_SETMASK, &waitMask, NULL);
 			execl(argv[0], argv[0], "stopsys", stopType, NULL);
 			
 		stopsys:

@@ -16,6 +16,8 @@
 
 #ifndef INIT_ACTION_H
 #define INIT_ACTION_H
+#include <signal.h>
+#include <stddef.h>
 
 typedef enum {
 	ACTION_NORMAL,
@@ -24,5 +26,11 @@ typedef enum {
 	ACTION_HALT,
 	ACTION_POWEROFF
 } action_t;
+
+static inline void sigUnblock(void) {
+	sigset_t empty;
+	sigemptyset(&empty);
+	sigprocmask(SIG_SETMASK, &empty, NULL);
+}
 
 #endif
