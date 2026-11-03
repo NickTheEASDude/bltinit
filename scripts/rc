@@ -17,15 +17,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+exec < /dev/console > /dev/console 2>&1
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 order=$(/sbin/rcorder /etc/rc.d/*)
 if test $? -ne 0; then
-	echo "rc: rcorder failed." >&2
+	echo >&2 "rc: rcorder failed."
 	exit 1
 fi
 for f in $order; do
 	if test -x "$f"; then 
-		RC_BOOT=1 "$f" start
+		RC_BOOT=1 "$f" start < /dev/console > /dev/console 2>&1
 		if test "$?" -ne 0; then
 			exit 1
 		fi

@@ -19,13 +19,14 @@
 #include "scripts.h"
 #include "shutdown.h"
 #include "action.h"
+#include "tty.h"
 #include <signal.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
 #include <fcntl.h>
-#include <err.h>
 #include <errno.h>
 #include <time.h>
 
@@ -37,10 +38,10 @@ static inline void ksleep(unsigned int seconds) {
 		req = rem;
 }
 void stage2stopsys(void) {
-	write(STDOUT_FILENO, ": Sending SIGTERM to all processes\n", 35);
+	broadcast(": Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);
 	ksleep(3);
-	write(STDOUT_FILENO, ": Sending SIGKILL to remaining processes\n", 41);
+	broadcast(": Sending SIGKILL to remaining processes\n");
 	kill(-1, SIGKILL);
 	for (;;) {
 		pid_t reaped = waitpid(-1, NULL, 0);
@@ -53,7 +54,7 @@ void stage2stopsys(void) {
 retry:;
 	pid_t stage2 = fork();
 	if (stage2 < 0) {
-		warnx("Fork failed, retrying");
+		broadcast("Fork failed, retrying\n");
 		goto retry;
 	} else if (stage2 > 0) {
 		pid_t reapedStage2;
@@ -65,12 +66,20 @@ retry:;
 			}
 		}
 	} else {
+		int fd = open("/dev/console", O_RDWR);
+		if (fd != -1) {
+			dup2(fd, STDIN_FILENO);
+			dup2(fd, STDOUT_FILENO);
+			dup2(fd, STDERR_FILENO);
+			if (fd > STDERR_FILENO) close(fd);
+		}
 #ifdef __linux__
 		execl("/bin/sh", "/bin/sh", S2_STOPSYS, "linux", (char *) NULL);
 #else
 		execl("/bin/sh", "/bin/sh", S2_STOPSYS, (char *) NULL);
 #endif
-		perror("init: stage2stopsys execl failed");
+		int err = errno;
+		broadcast("init: stage2stopsys execl failed: %s\n", strerror(err));
 		_exit(1);
 	}
 }
@@ -100,18 +109,18 @@ __attribute__((noreturn)) void kstop(const sig_atomic_t action) {
 #endif
 	ENABLE_CAD();
 	if (action == ACTION_REBOOT) {
-		write(STDOUT_FILENO, "Now rebooting system\n", 21);
+		broadcast("Now rebooting system\n");
 		REBOOT();
 	} else if (action == ACTION_HALT) {
-		write(STDOUT_FILENO, "Now halting system\n", 19);
+		broadcast("Now halting system\n");
 		HALT();
 	} else if (action == ACTION_POWEROFF) {
-		write(STDOUT_FILENO, "Now shutting down system\n", 25);
+		broadcast("Now shutting down system\n");
 		POWEROFF();
 	}
-	write(STDERR_FILENO, "Either the reboot/halt/poweroff call failed,\n", 45);
-	write(STDERR_FILENO, "or the option wasn't specified correctly.\n", 42);
-	write(STDERR_FILENO, "Either way, going into infinite loop. Treat as a halt.\n", 55);
+	broadcast("Either the reboot/halt/poweroff call failed,\n");
+	broadcast("or the option wasn't specified correctly.\n");
+	broadcast("Either way, going into infinite loop. Treat as a halt.\n");
 	HALT();
 infloop:
 	for(;;)

@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+exec < /dev/console > /dev/console 2>&1
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 order=$(/sbin/rcorder /etc/rc.d/*)
 EXIT=$?
@@ -25,10 +26,10 @@ echo "WARNING! System going down for $1 NOW!" | wall -n
 sleep 0.5
 echo ""
 if test "$EXIT" -ne 0; then
-	echo "rc.shutdown: rcorder failed" >&2
-	echo "Continuing shutdown, note some or all services may have failed to stop" >&2
+	echo >&2 "rc.shutdown: rcorder failed"
+	echo >&2 "Continuing shutdown, note some or all services may have failed to stop"
 else
 	for f in $order; do
-		test -x "$f" && RC_SHUT=1 "$f" stop
+		test -x "$f" && RC_SHUT=1 "$f" stop < /dev/console > /dev/console 2>&1
 	done
 fi

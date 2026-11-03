@@ -17,11 +17,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "scripts.h"
+#include "tty.h"
 #include "rc.h"
 #include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <err.h>
 #include <errno.h>
 #include <stdbool.h>
 
@@ -29,7 +31,7 @@ bool startServices(void) {
 retry:;
 	pid_t services = fork();
 	if (services < 0) {
-		warnx("Fork failed, retrying");
+		broadcast("Fork failed, retrying\n");
 		goto retry;
 	} else if (services > 0) {
 		pid_t reapedServices;
@@ -46,8 +48,16 @@ retry:;
 		else
 			return false;
 	} else {
+		int fd = open("/dev/console", O_RDWR);
+		if (fd != -1) {
+			dup2(fd, STDIN_FILENO);
+			dup2(fd, STDOUT_FILENO);
+			dup2(fd, STDERR_FILENO);
+			if (fd > STDERR_FILENO) close(fd);
+		}
 		execl("/bin/sh", "/bin/sh", RC, (char *) NULL);
-		perror("init: rc execl failed");
+		int err = errno;
+		broadcast("init: rc execl failed: %s\n", strerror(err));
 		_exit(1);
 	}
 }
@@ -56,7 +66,7 @@ void stopServices(const char *restrict msg) {
 retry:;
 	pid_t services = fork();
 	if (services < 0) {
-		warnx("Fork failed, retrying");
+		broadcast("Fork failed, retrying\n");
 		goto retry;
 	} else if (services > 0) {
 		pid_t reapedServices;
@@ -68,8 +78,16 @@ retry:;
 			}
 		}
 	} else {
+		int fd = open("/dev/console", O_RDWR);
+		if (fd != -1) {
+			dup2(fd, STDIN_FILENO);
+			dup2(fd, STDOUT_FILENO);
+			dup2(fd, STDERR_FILENO);
+			if (fd > STDERR_FILENO) close(fd);
+		}
 		execl("/bin/sh", "/bin/sh", RC_SHUT, msg, (char *) NULL);
-		perror("init: rc.shutdown execl failed");
+		int err = errno;
+		broadcast("init: rc.shutdown execl failed: %s\n", strerror(err));
 		_exit(1);
 	}
 }

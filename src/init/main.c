@@ -51,6 +51,9 @@ int main(int argc, char *argv[]) {
 		write(STDERR_FILENO, "This program must be run as PID 1 (init)\n", 41);
 		return 1;
 	}
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
 	struct sigaction sa;
 	sa.sa_handler = handleSignals;
 	sigemptyset(&sa.sa_mask);
