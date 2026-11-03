@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 project(
-  'init', 'c',
+  'bltinit', 'c',
   version: '2.1.0', meson_version: '>=1.3.0',
   default_options: ['sysconfdir=/etc']
 )
