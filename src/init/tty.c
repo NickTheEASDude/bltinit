@@ -48,7 +48,6 @@ void setupConsole(void) {
 void broadcast(const char *restrict format, ...) {
 	va_list args;
 	va_start(args, format);
-	struct stat pStat;
 	int fd = open("/dev/console", O_WRONLY);
 	if (fd != -1) {
 		vdprintf(fd, format, args);
