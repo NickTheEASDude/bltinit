@@ -96,7 +96,7 @@ run_rc_command() {
 			[Oo][Nn][Ee][Ss][Hh][Oo][Tt])
 				type="oneshot"
 				;;
-			[Cc][Rr][Ii][Tt][Ii][Cc][Aa][Ll])
+			[Cc][Rr][Ii][Tt][Ii][Cc][Aa][Ll]) # Should we exit nonzero on failure?
 				importance="critical"
 				;;
 		esac
@@ -109,8 +109,6 @@ run_rc_command() {
 		echo >&2 "ERROR: script type $type invalid, can only be oneshot or daemon"
 		exit 1
 	fi
-	# Shoud we exit nonzero on failure?
-	importance="${importance:-$(get_rc_meta IMPORTANCE "$0")}"
 	case "$1" in
 		start)
 			# I was too lazy to implement a forcestart function,
