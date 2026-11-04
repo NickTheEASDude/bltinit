@@ -16,9 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifdef __linux__
-# define _POSIX_C_SOURCE 200809L // For signal handling functions in signal.h
-#endif
 #include "scripts.h"
 #include "tty.h"
 #include "rc.h"
