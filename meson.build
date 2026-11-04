@@ -18,7 +18,7 @@
 
 project(
   'bltinit', 'c',
-  version: '2.2.2', meson_version: '>=1.3.0',
+  version: '2.2.3', meson_version: '>=1.3.0',
   default_options: ['sysconfdir=/etc']
 )
 cc = meson.get_compiler('c')

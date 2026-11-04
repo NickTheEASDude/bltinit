@@ -33,14 +33,24 @@ findMounts() {
 	fi
 }
 
-# It's usually not a good idea to (possibly) kill every process and unmount everyhting but the root,
+# It's usually not a good idea to (possibly) kill every process and unmount everything but the root,
 # so this guard is put in place to prevent users accidentally doing that
 if test $PPID -ne 1; then
-	echo "This program must be directly invoked by init." >&2
+	echo >&2 "This program must be directly invoked by init."
 	exit 1
 fi
 
-echo ": Syncing disks"
+# I want the rc/stopsys framework to be init-agnostic, and not all inits handle TERM-then-KILL in the main logic,
+# So we add this here to support those init systems
+if test "$1" = "kill" || test "$1" = "linux+kill"; then
+	echo ": Sending SIGTERM to all processes"
+	kill -s TERM -- -1
+	sleep 3
+	echo ": Sending SIGKILL to remaining processes"
+	kill -s KILL -- -1
+fi
+
+echo ": Syncing disks" > /dev/console
 sync
 echo ": Unmounting filesystems"
 # This unholy string finds all of the mounts, counts the amount of slashes in the path,
@@ -71,7 +81,7 @@ done
 echo ": Final sync"
 sync
 # This is gated only to linux because the BSDs handle unmounting root directly in the kernel, so this step isn't needed
-if test "$1" = "linux"; then
+if test "$1" = "linux" || test "$1" = "linux+kill"; then
 	echo ": Remounting / as read-only"
 	# Same deal as mount, we don't really want to reboot with / still mounted rw, so we give it multiple chances
 	ATTEMPTS=5
