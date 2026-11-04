@@ -18,7 +18,7 @@
 
 project(
   'bltinit', 'c',
-  version: '2.2.0', meson_version: '>=1.3.0',
+  version: '2.2.1', meson_version: '>=1.3.0',
   default_options: ['sysconfdir=/etc']
 )
 cc = meson.get_compiler('c')
@@ -41,8 +41,7 @@ config.set_quoted(
   get_option('prefix') / get_option('datadir') / 'rc/rc.fallback'
 )
 
-cc.has_function('pipe2', required: true)
-cc.has_function('dprintf', required: true)
+cc.has_function('vdprintf', required: true)
 
 if get_option('manpages')
   pod2man = find_program('pod2man', required: true)

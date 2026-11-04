@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define _GNU_SOURCE // for pipe2(2)
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -58,13 +58,14 @@ int main(int argc, char *argv[]) {
 		pid_t sid = setsid();
 		int pipeFD[2];
 		// We set up a pipe here for exit code propagation
-		if (pipe2(pipeFD, O_CLOEXEC) == -1) {
+		if (pipe(pipeFD) == -1) {
 			err = errno;
 			syslog(LOG_ERR, "child1 pipe failed: %s", strerror(err));
 			fprintf(stderr, "rundaemon: child1 pipe failed: %s\n", strerror(err));
 			_exit(3);
 		}
-
+		fcntl(pipeFD[0], F_SETFD, FD_CLOEXEC);
+		fcntl(pipeFD[1], F_SETFD, FD_CLOEXEC);
 		if (sid < 0) {
 			err = errno;
 			syslog(LOG_ERR, "child1 setsid failed: %s", strerror(err));
@@ -97,7 +98,7 @@ int main(int argc, char *argv[]) {
 					read(pipeFD[0], &cErr, sizeof(cErr));
 					fprintf(stderr, "rundaemon: child2 execvp failed: %s\n", strerror(cErr));
 					close(pipeFD[0]);
-					_exit(7);
+					_exit(6);
 				} else {
 					close(pipeFD[0]);
 					_exit(cErr);
@@ -107,7 +108,17 @@ int main(int argc, char *argv[]) {
 		} else { // Child
 			// Now we're fully detached from the environment we were started from
 			close(pipeFD[0]);
-			char *newArgv[argc];
+			char **newArgv = calloc(argc, sizeof(char *));
+			if (newArgv == NULL) {
+				err = errno;
+				syslog(LOG_ERR, "child2 calloc failed: %s", strerror(err));
+				fprintf(stderr, "rundaemon: child2 calloc failed: %s\n", strerror(err));
+				closelog();
+				const int sendErr = 7;
+				write(pipeFD[1], &sendErr, sizeof(sendErr));
+				close(pipeFD[1]);
+				_exit(7);
+			}
 			// Shift everything in argv to the left by 1 and discard the old argv[0]
 			for (int i = 1; i < argc; i++)
 				newArgv[i - 1] = argv[i];
@@ -131,6 +142,7 @@ int main(int argc, char *argv[]) {
 			write(pipeFD[1], &err, sizeof(err));
 			close(pipeFD[1]);
 			closelog();
+			free(newArgv);
 			_exit(6);
 		}
 	}

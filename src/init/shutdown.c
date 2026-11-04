@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define _POSIX_C_SOURCE 200112L // For signal handling functions in signal.h
 #include "scripts.h"
 #include "shutdown.h"
 #include "action.h"
@@ -29,6 +30,31 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
+
+// Do you like the c preprocessor? Because I don't!
+#if defined(__linux__)
+# include <sys/reboot.h>
+# include <linux/reboot.h>
+# define ENABLE_CAD() reboot(LINUX_REBOOT_CMD_CAD_ON)
+# define HALT() reboot(LINUX_REBOOT_CMD_HALT)
+# define REBOOT() reboot(LINUX_REBOOT_CMD_RESTART)
+# define POWEROFF() reboot(LINUX_REBOOT_CMD_POWER_OFF)
+// Lump all the BSDs together, they're similar enough to each other that we can get away with this
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+# include <sys/reboot.h>
+# define ENABLE_CAD() ((void) 0)
+# ifdef __NetBSD__
+#  define HALT() reboot(RB_HALT, NULL)
+#  define REBOOT() reboot(RB_AUTOBOOT, NULL)
+#  define POWEROFF() reboot(RB_POWERDOWN, NULL)
+# else
+#  define HALT() reboot(RB_HALT)
+#  define REBOOT() reboot(RB_AUTOBOOT)
+#  define POWEROFF() reboot(RB_POWEROFF)
+# endif
+#else
+# error("Unsupported OS!")
+#endif
 
 // The libc sleep function sucks, so we make our own with the nanosleep syscall
 static inline void ksleep(unsigned int seconds) {
@@ -92,31 +118,7 @@ retry:;
 	}
 }
 
-__attribute__((noreturn)) void kstop(const sig_atomic_t action) {
-	// Do you like the c preprocessor? Because I don't!
-#if defined(__linux__)
-# include <sys/reboot.h>
-# include <linux/reboot.h>
-# define ENABLE_CAD() reboot(LINUX_REBOOT_CMD_CAD_ON)
-# define HALT() reboot(LINUX_REBOOT_CMD_HALT)
-# define REBOOT() reboot(LINUX_REBOOT_CMD_RESTART)
-# define POWEROFF() reboot(LINUX_REBOOT_CMD_POWER_OFF)
-// Lump all the BSDs together, they're similar enough to each other that we can get away with this
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-# include <sys/reboot.h>
-# define ENABLE_CAD() ((void) 0)
-# ifdef __NetBSD__
-#  define HALT() reboot(RB_HALT, NULL)
-#  define REBOOT() reboot(RB_AUTOBOOT, NULL)
-#  define POWEROFF() reboot(RB_POWERDOWN, NULL)
-# else
-#  define HALT() reboot(RB_HALT)
-#  define REBOOT() reboot(RB_AUTOBOOT)
-#  define POWEROFF() reboot(RB_POWEROFF)
-# endif
-#else
-# error("Unsupported OS!")
-#endif
+void kstop(const sig_atomic_t action) {
 	ENABLE_CAD();
 	if (action == ACTION_REBOOT) {
 		broadcast("Now rebooting system\n");

@@ -21,6 +21,7 @@
 // and has proven to be fully functional without major bugs.
 // Do note that further testing is encouraged for anybody who uses this program.
 
+#define _POSIX_C_SOURCE 200809L
 #include "tty.h"
 #include "action.h"
 #include <signal.h>
