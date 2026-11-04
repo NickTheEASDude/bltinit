@@ -17,9 +17,6 @@
 #ifndef INIT_ACTION_H
 #define INIT_ACTION_H
 
-#ifndef _POSIX_C_SOURCE
-# define _POSIX_C_SOURCE 200112L // For signal handling functions in signal.h
-#endif
 #include <signal.h>
 #include <stddef.h>
 

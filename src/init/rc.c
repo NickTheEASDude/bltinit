@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define _POSIX_C_SOURCE 200809L // action.h uses signal types that don't exist in ISO C
 #include "scripts.h"
 #include "action.h"
 #include "tty.h"

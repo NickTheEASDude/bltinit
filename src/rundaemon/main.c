@@ -56,23 +56,42 @@ int main(int argc, char *argv[]) {
 		// Now at this point we need to start detaching ourselves from the process that called this program.
 		// This syscall sets a new session id (which is possible because we've already forked from any potential session leaders)
 		pid_t sid = setsid();
-		int pipeFD[2];
-		// We set up a pipe here for exit code propagation
-		if (pipe(pipeFD) == -1) {
-			err = errno;
-			syslog(LOG_ERR, "child1 pipe failed: %s", strerror(err));
-			fprintf(stderr, "rundaemon: child1 pipe failed: %s\n", strerror(err));
-			_exit(3);
-		}
-		fcntl(pipeFD[0], F_SETFD, FD_CLOEXEC);
-		fcntl(pipeFD[1], F_SETFD, FD_CLOEXEC);
 		if (sid < 0) {
 			err = errno;
 			syslog(LOG_ERR, "child1 setsid failed: %s", strerror(err));
 			fprintf(stderr, "rundaemon: child1 setsid failed: %s\n", strerror(err));
 			closelog();
+			_exit(3);
+		}
+
+		// We set up a pipe here for exit code propagation
+		int pipeFD[2];
+		if (pipe(pipeFD) == -1) {
+			err = errno;
+			syslog(LOG_ERR, "child1 pipe failed: %s", strerror(err));
+			fprintf(stderr, "rundaemon: child1 pipe failed: %s\n", strerror(err));
+			closelog();
 			_exit(4);
 		}
+		if (fcntl(pipeFD[0], F_SETFD, FD_CLOEXEC) < 0) {
+			err = errno;
+			syslog(LOG_ERR, "child1 pipe failed: %s", strerror(err));
+			fprintf(stderr, "rundaemon: child1 pipe failed: %s\n", strerror(err));
+			closelog();
+			close(pipeFD[0]);
+			close(pipeFD[1]);
+			_exit(4);
+		}
+		if (fcntl(pipeFD[1], F_SETFD, FD_CLOEXEC) < 0) {
+			err = errno;
+			syslog(LOG_ERR, "child1 pipe failed: %s", strerror(err));
+			fprintf(stderr, "rundaemon: child1 pipe failed: %s\n", strerror(err));
+			closelog();
+			close(pipeFD[0]);
+			close(pipeFD[1]);
+			_exit(4);
+		}
+			
 		// Once the pipe is set up and we now know we are the session leader,
 		// we fork again to be absolutely sure nothing from the old environment will cause issues
 		pid_t child2 = fork();
