@@ -16,7 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define _POSIX_C_SOURCE 200809L // For signal handling functions in signal.h
+#ifdef __linux__
+# define _POSIX_C_SOURCE 200809L // For signal handling functions in signal.h
+#endif
 #include "scripts.h"
 #include "shutdown.h"
 #include "action.h"
@@ -41,12 +43,6 @@
 # define POWEROFF() reboot(LINUX_REBOOT_CMD_POWER_OFF)
 // Lump all the BSDs together, they're similar enough to each other that we can get away with this
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-// The BSDs hide reboot(2) if _POSIX_C_SOURCE is defined, so we have to expose it with feature-test macros
-# ifdef __NetBSD__
-#  define _NETBSD_SOURCE
-# else
-#  define __BSD_VISIBLE
-# endif
 # include <sys/reboot.h>
 # define ENABLE_CAD() ((void) 0)
 # ifdef __NetBSD__
