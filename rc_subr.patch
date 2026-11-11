@@ -1,0 +1,36 @@
+--- a/scripts/rc.subr	2026-11-10 20:08:46.158255945 -0500
++++ b/scripts/rc.subr	2026-11-10 20:37:00.755113739 -0500
+@@ -29,6 +29,9 @@ HOME=/
+ 
+ checkyesno() {
+ 	eval val=\$$1
++	if test -z "$val"; then
++		return 1
++	fi
+ 	case "$val" in
+ 		[Yy][Ee][Ss]|[1]|[Tt][Rr][Uu][Ee])
+ 			return 0
+@@ -45,11 +48,21 @@ checkyesno() {
+ 
+ # The lion doesn't care if rc.conf actually exists
+ load_rc_config() {
++	local OLD_IFS
+ 	test -f /etc/rc.conf && . /etc/rc.conf
+ 	if test -n "$CONF_include"; then
+-		for conf in "$CONF_include"/*; do
+-			test -f "$conf" && . "$conf"
++		OLD_IFS="$IFS"
++		IFS=":"
++		for include in $CONF_include; do
++			IFS="$OLD_IFS"
++			for conf in "$CONF_include"/*.conf; do
++				confvar="${conf##${include}/}"
++				checkyesno "${confvar%.conf}_enable" \
++					&& test -f "$conf" && . "$conf"
++			done
++			IFS=":"
+ 		done
++		IFS="$OLD_IFS"
+ 	fi
+ }
+ 

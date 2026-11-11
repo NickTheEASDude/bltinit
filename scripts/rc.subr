@@ -22,24 +22,48 @@
 # and has proven to be fully functional without major bugs.
 # Do note that further testing is encouraged for anybody who uses this program.
 
+# Set reasonable environment defaults
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
+LC_ALL=C
+HOME=/
 
-# I really need to fix this so that it actually only checks between yes and no
 checkyesno() {
 	eval val=\$$1
+	if test -z "$val"; then
+		return 1
+	fi
 	case "$val" in
 		[Yy][Ee][Ss]|[1]|[Tt][Rr][Uu][Ee])
 			return 0
 			;;
-		*)
+		[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee])
 			return 1
+			;;
+		*)
+			echo >&2 "Invalid value, must be yes/no or true/false"
+			return 2
 			;;
 	esac
 }
 
 # The lion doesn't care if rc.conf actually exists
 load_rc_config() {
+	local OLD_IFS
 	test -f /etc/rc.conf && . /etc/rc.conf
+	if test -n "$CONF_include"; then
+		OLD_IFS="$IFS"
+		IFS=":"
+		for include in $CONF_include; do
+			IFS="$OLD_IFS"
+			for conf in "$CONF_include"/*.conf; do
+				confvar="${conf##${include}/}"
+				checkyesno "${confvar%.conf}_enable" \
+					&& test -f "$conf" && . "$conf"
+			done
+			IFS=":"
+		done
+		IFS="$OLD_IFS"
+	fi
 }
 
 # This is how KEYWORDS is parsed
@@ -113,12 +137,28 @@ run_rc_command() {
 		start)
 			# I was too lazy to implement a forcestart function,
 			# so I made rcvar only matter on bootup
-			if test "$RC_BOOT" = "1" && test -n "$rcvar" && ! checkyesno "$rcvar"; then
-				exit 0
+			if test -z "$rcvar"; then
+				echo -n >&2 "WARNING: Service $name has no rcvar"
+				if test "$RC_BOOT" = "1"; then
+					echo >&2 ", treating as disabled"
+				else
+					printf >&2 "\n"
+				fi
+				IMPLICIT_ENABLE="no"
+				rcvar="IMPLICIT_ENABLE"
+			fi
+			if test "$RC_BOOT" = "1"; then
+				checkyesno "$rcvar"
+				EXIT=$?
+				if test "$EXIT" -eq 2; then
+					echo >&2 "WARNING: Treating service $name as disabled due to malformed rc.conf"
+					exit 0
+				fi
+				test "$EXIT" -eq 1 && exit 0
 			fi
 			if test "$type" = "oneshot"; then
 				test -n "$start_msg" \
-					&& echo "${start_msg}" \
+					&& printf "%b\n" "${start_msg}" \
 					|| echo "/ Starting $name"
 				# Some scripts will run before the cgroup fs is mounted,
 				# so we have to provision for that
@@ -153,7 +193,7 @@ run_rc_command() {
 				# Make the cgroup where the daemon will live
 				mkdir -p "$CGROUP"
 				test -n "$start_msg" \
-					&& echo "${start_msg}" \
+					&& printf "%b\n" "${start_msg}" \
 					|| echo "/ Starting $name"
 				# Send to the new cgroup and run cmd
 				(echo 0 > "$CGROUP"/cgroup.procs && eval "$cmd $cmd_args")
