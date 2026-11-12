@@ -250,7 +250,12 @@ run_rc_command() {
 			fi
 			;;
 		status)
-			# Not much use for this from the user's perspective, but might have some use for scriptwriters
+			# Only time I see writing a custom status command as being useful is maybe for oneshot scripts that handle networking,
+			# so we provision for that, although in most cases you won't have to write one
+			if test -n "$status_cmd"; then
+				eval "$status_cmd" "$status_cmd_args"
+				return $?
+			fi
 			if test "$type" = "oneshot"; then
 				echo "$name is oneshot, has no status"
 			else
