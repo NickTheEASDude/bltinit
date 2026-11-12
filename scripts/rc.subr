@@ -138,7 +138,7 @@ run_rc_command() {
 			# I was too lazy to implement a forcestart function,
 			# so I made rcvar only matter on bootup
 			if test -z "$rcvar"; then
-				echo -n >&2 "WARNING: Service $name has no rcvar"
+				printf >&2 "WARNING: Service $name has no rcvar"
 				if test "$RC_BOOT" = "1"; then
 					echo >&2 ", treating as disabled"
 				else
