@@ -1,0 +1,38 @@
+name: release.yml
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*'
+permissions:
+  contents: write
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+      - name: Install Meson+Ninja
+        run: |
+          python -m pip install --upgrade pip
+          pip install meson ninja
+      - name: Run meson setup
+        run: meson setup build --buildtype=release
+      - name: Run meson dist
+        run: meson dist -C build --formats=xztar,gztar
+      - name: Release to GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/meson-dist/*.tar.xz
+            build/meson-dist/*.tar.gz
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
