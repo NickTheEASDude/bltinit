@@ -37,6 +37,7 @@
 
 volatile sig_atomic_t reaped = ACTION_NORMAL;
 volatile sig_atomic_t stopsys_condition = ACTION_NORMAL;
+volatile sig_atomic_t alarmTriggered = ACTION_NORMAL;
 
 // We only set the sig atomics in the handler to be thread safe
 void handleSignals(int sig) {
@@ -48,6 +49,8 @@ void handleSignals(int sig) {
 		stopsys_condition = ACTION_HALT;
 	else if (sig == SIGCHLD)
 		reaped = ACTION_REAP;
+	else if (sig == SIGALRM)
+		alarmTriggered = ACTION_ALARM;
 }
 
 int main(int argc, char *argv[]) {
@@ -118,6 +121,7 @@ multiSkip:
 	sigaddset(&blockMask, SIGUSR1);
 	sigaddset(&blockMask, SIGUSR2);
 	sigaddset(&blockMask, SIGCHLD);
+	sigaddset(&blockMask, SIGALRM);
 	sigemptyset(&waitMask);
 	sigprocmask(SIG_BLOCK, &blockMask, NULL);
 
@@ -126,6 +130,13 @@ multiSkip:
 		// This puts init into a blocking state until a caught signal changes either of the sigatomic vars
 		while (reaped == ACTION_NORMAL && stopsys_condition == ACTION_NORMAL)
 			sigsuspend(&waitMask);
+		
+		// SIGALRM, handle a failed getty fork
+		if (alarmTriggered == ACTION_ALARM) {
+			alarmTriggered = ACTION_NORMAL;
+			retryConsoles();
+		}
+
 		// SIGCHLD, reap a dead process
 		if (reaped == ACTION_REAP) {
 			reaped = ACTION_NORMAL;
@@ -137,6 +148,7 @@ multiSkip:
 
 		if (stopsys_condition != ACTION_NORMAL) {
 			// Now we begin to get the system ready for poweroff/reboot/halt
+			alarm(0);
 			char *stopType = "";
 			openlog("init", LOG_PID | LOG_CONS, LOG_DAEMON);
 			if (stopsys_condition == ACTION_REBOOT) {
@@ -159,12 +171,13 @@ multiSkip:
 			sigprocmask(SIG_SETMASK, &waitMask, NULL);
 			// This is needed to clear any random open FDs or references to things that would stop / from remounting RO
 			// (again, had to learn that the hard way...)
+			alarm(0);
 			execl(argv[0], argv[0], "stopsys", stopType, NULL);
 			
 		stopsys:
 			// Run /usr/libexec/stage2stopsys using the system /bin/sh
 			int err = stage2stopsys();
-			if (err != 0) {
+			if (err != 0) { // we handle the error here so we have access to argv
 				broadcast("ERROR: Forking for %s failed: %s\n", S2_STOPSYS, strerror(err));
 				broadcast("Falling back to emergency measures, system will %s in at least 2 seconds\n", argv[2]);
 				sync();

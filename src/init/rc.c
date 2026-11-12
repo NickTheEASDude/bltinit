@@ -37,13 +37,21 @@ retry:;
 	if (services < 0) {
 		// This should never happen, and if it does, there's not much we can do, so we write what happened, and we launch a shell
 		err = errno;
-		if (attempts-- > 0) {
+		if (--attempts > 0) {
 			ksleep(1);
 			goto retry;
 		}
 		broadcast("FATAL: Forking for %s failed: %s\n", RC, strerror(err));
 		broadcast("Falling back to /bin/sh as PID 1. You're on your own...\n");
-		execl("/bin/sh", "/bin/sh");
+		sigUnblock();
+		int fd = open("/dev/console", O_RDWR);
+		if (fd >= 0) {
+			dup2(fd, STDIN_FILENO);
+			dup2(fd, STDOUT_FILENO);
+			dup2(fd, STDERR_FILENO);
+			if (fd > STDERR_FILENO) close(fd);
+		}
+		execl("/bin/sh", "/bin/sh", NULL);
 		_exit(1);
 	} else if (services > 0) {
 		pid_t reapedServices;
@@ -84,7 +92,7 @@ retry:;
 	if (services < 0) {
 		// Slightly different failure mode here, since something like a fork bomb could cause failure here
 		err = errno;
-		if (attempts-- > 0) {
+		if (--attempts > 0) {
 			waitpid(-1, NULL, WNOHANG);
 			ksleep(1);
 			goto retry;

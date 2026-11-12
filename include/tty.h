@@ -32,11 +32,14 @@ typedef struct {
         smode_t   mode;
         char      prog[512];
         pid_t     pid;
+	bool      defer;
+	int       attempts;
 } console_t;
 extern console_t consoles[MAX_CONSOLES];
 extern int nConsoles;
 int loadConsoles(const char *path);
 bool execGetty(console_t *c);
+void retryConsoles(void);
 void spawnConsoles(void);
 void consoleExit(pid_t reapPID);
 void broadcast(const char *restrict format, ...);

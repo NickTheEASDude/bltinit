@@ -136,6 +136,8 @@ int loadConsoles(const char *path) {
 		// The actual program to run
 		snprintf(c->prog, sizeof(c->prog), "%s", prog);
 		c->pid = -1;
+		c->defer = false;
+		c->attempts = 0;
 		n++;
 	}
 
@@ -146,22 +148,14 @@ int loadConsoles(const char *path) {
 
 // Despite the name, the program launched doesn't have to be getty, just a legacy name from when getty WAS hardcoded
 bool execGetty(console_t *c) {
-	int attempts = 0;
-	pid_t childPID;
-	// Actual miracle, I remembered to implement a fork attempts guard here!
-	for (;;) {
-		childPID = fork();
-		if (childPID >= 0)
-			break;
-		attempts++;
-		if (attempts >= 5) {
-			broadcast("getty fork failed after 5 attempts, giving up.\n");
-			return false;
-		}
-		// Remember how I said the libc sleep function sucks? Well clearly I didn't...
-		sleep(1);
-	}
-	if (childPID > 0) {
+	int err;
+	pid_t childPID = fork();
+	if (childPID < 0) {
+		err = errno;
+		if (c-> attempts == 0)
+			broadcast("init: %s fork failed: %s\n", c->device, strerror(err));
+		return false;
+	} else if (childPID > 0) {
 		// This is basically treated as if it were a daemon, so we just record the child PID in the console struct and immediately exit
 		c->pid = childPID;
 		return true;
@@ -213,10 +207,28 @@ bool execGetty(console_t *c) {
 	}
 }
 
+static void tryConsole(console_t *c) {
+	if (execGetty(c)) {
+		c->defer = false;
+		c->attempts = 0;
+		return;
+	}
+	c->attempts++;
+	c->defer = true;
+	alarm(1);
+}
+
+void retryConsoles(void) {
+	for (int i = 0; i < nConsoles; i++) {
+		if(consoles[i].defer)
+			tryConsole(&consoles[i]);
+	}
+}
+
 // Spawn consoles on the consoles that were loaded in from loadConsoles
 void spawnConsoles(void) {
 	for (int i = 0; i < nConsoles; i++)
-		execGetty(&consoles[i]);
+		tryConsole(&consoles[i]);
 }
 
 // Process reaping, was offloaded here to also implement tty respawn logic
@@ -225,7 +237,7 @@ void consoleExit(pid_t reapPID) {
 		if (consoles[i].pid != reapPID) continue;
 		consoles[i].pid = -1;
 		if (consoles[i].mode == SPAWN_REPEAT || consoles[i].mode == SPAWN_ASK)
-			execGetty(&consoles[i]);
+			tryConsole(&consoles[i]);
 		return;
 	}
 }

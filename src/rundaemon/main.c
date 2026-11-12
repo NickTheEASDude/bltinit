@@ -28,7 +28,7 @@
 
 int main(int argc, char *argv[]) {
 	int err;
-	openlog("rundaemon", LOG_PID | LOG_CONS | FD_CLOEXEC, LOG_DAEMON);
+	openlog("rundaemon", LOG_PID | LOG_CONS, LOG_DAEMON);
 	if (argc < 2) {
 		fprintf(stderr, "NOT ENOUGH ARGUMENTS\n");
 		fprintf(stderr, "Usage: %s <command> [cmd_args]...\n", argv[0]);

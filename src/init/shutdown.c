@@ -88,7 +88,7 @@ retry:;
 	if (stage2 < 0) {
 		// Much like forking /etc/rc, this should never ever fail, but we need to hit that edge case
 		err = errno;
-		if (attempts-- > 0) {
+		if (--attempts > 0) {
 			waitpid(-1, NULL, WNOHANG);
 			ksleep(1);
 			goto retry;
