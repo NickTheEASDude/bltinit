@@ -207,6 +207,7 @@ bool execGetty(console_t *c) {
 	}
 }
 
+// Basically we try to spawn the console, and if it fails, we try again in 1 second (spawned from the main loop so as not to block it here)
 static void tryConsole(console_t *c) {
 	if (execGetty(c)) {
 		c->defer = false;
@@ -218,6 +219,7 @@ static void tryConsole(console_t *c) {
 	alarm(1);
 }
 
+// And this is where it's retried
 void retryConsoles(void) {
 	for (int i = 0; i < nConsoles; i++) {
 		if(consoles[i].defer)

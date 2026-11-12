@@ -56,10 +56,18 @@
 #endif
 
 // The libc sleep function sucks, so we make our own with the nanosleep syscall
-void ksleep(unsigned int seconds) {
+void ksleep(double seconds) {
+	if (seconds < 0) {
+		broadcast("Seconds can't be negative");
+		return;
+	}
 	struct timespec req, rem;
-	req.tv_sec = seconds;
-	req.tv_nsec = 0;
+	req.tv_sec = (time_t) seconds;
+	req.tv_nsec = (long) (seconds - (int) seconds) * 1000000000L;
+	if (req.tv_nsec > 1000000000L) {
+		req.tv_sec++;
+		req.tv_nsec -= 1000000000L;
+	}
 	while (nanosleep(&req, &rem) == -1 && errno == EINTR)
 		req = rem;
 }

@@ -21,5 +21,5 @@
 
 int stage2stopsys(void);
 void kstop(const sig_atomic_t action);
-void ksleep(unsigned int seconds);
+void ksleep(double seconds);
 #endif
