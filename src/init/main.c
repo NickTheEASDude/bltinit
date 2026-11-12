@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGALRM, &sa, NULL);
 	if (argc > 1 && strcmp(argv[1], "stopsys") == 0) {
 		// This only executes during poweroff/reboot/halt,
 		// see where the re-exec occurs for the explanation as to why this needs to be done
@@ -84,6 +85,7 @@ int main(int argc, char *argv[]) {
 		sigaction(SIGINT, &sa, NULL);
 		sigaction(SIGUSR1, &sa, NULL);
 		sigaction(SIGUSR2, &sa, NULL);
+		sigaction(SIGALRM, &sa, NULL);
 		if (argc > 2) {
 			if (strcmp(argv[2], "reboot") == 0)
 				stopsys_condition = ACTION_REBOOT;
@@ -128,7 +130,7 @@ multiSkip:
 	// The main reaping loop
 	for (;;) {
 		// This puts init into a blocking state until a caught signal changes either of the sigatomic vars
-		while (reaped == ACTION_NORMAL && stopsys_condition == ACTION_NORMAL)
+		while (reaped == ACTION_NORMAL && stopsys_condition == ACTION_NORMAL && alarmTriggered == ACTION_NORMAL)
 			sigsuspend(&waitMask);
 		
 		// SIGALRM, handle a failed getty fork

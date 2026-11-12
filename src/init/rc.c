@@ -51,7 +51,7 @@ retry:;
 			dup2(fd, STDERR_FILENO);
 			if (fd > STDERR_FILENO) close(fd);
 		}
-		execl("/bin/sh", "/bin/sh", NULL);
+		execl("/bin/sh", "/bin/sh", (char *) NULL);
 		_exit(1);
 	} else if (services > 0) {
 		pid_t reapedServices;
