@@ -30,7 +30,9 @@
 
 #ifdef __linux__
 # include <sys/reboot.h>
+# include <sys/mount.h>
 # include <linux/reboot.h>
+# include <errno.h>
 #endif
 
 volatile sig_atomic_t reaped = ACTION_NORMAL;
@@ -161,7 +163,23 @@ multiSkip:
 			
 		stopsys:
 			// Run /usr/libexec/stage2stopsys using the system /bin/sh
-			stage2stopsys();
+			int err = stage2stopsys();
+			if (err != 0) {
+				broadcast("ERROR: Forking for %s failed: %s\n", S2_STOPSYS, strerror(err));
+				broadcast("Falling back to emergency measures, system will %s in at least 2 seconds\n", argv[2]);
+				sync();
+				ksleep(1);
+				sync();
+				ksleep(1);
+#ifdef __linux__ // BSDs don't require / to be remounted read-only (and remember, this is emergency code)
+				if (mount(NULL, "/", NULL, MS_REMOUNT | MS_RDONLY, NULL) != 0) {
+					err = errno;
+					broadcast("Remounting / as read-only failed: %s\n", strerror(err));
+				}
+				sync();
+				ksleep(1);
+#endif
+			}
 			// Actually execute the reboot syscall with the given stopsys condition
 			kstop(stopsys_condition);
 		}

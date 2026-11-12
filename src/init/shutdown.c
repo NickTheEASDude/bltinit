@@ -56,7 +56,7 @@
 #endif
 
 // The libc sleep function sucks, so we make our own with the nanosleep syscall
-static inline void ksleep(unsigned int seconds) {
+void ksleep(unsigned int seconds) {
 	struct timespec req, rem;
 	req.tv_sec = seconds;
 	req.tv_nsec = 0;
@@ -64,7 +64,7 @@ static inline void ksleep(unsigned int seconds) {
 		req = rem;
 }
 
-void stage2stopsys(void) {
+int stage2stopsys(void) {
 	// This takes out any remaining daemons or other things that might still be running after rc.shutdown finished
 	broadcast(": Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);
@@ -80,12 +80,20 @@ void stage2stopsys(void) {
 			continue;
 		}
 	}
+	int err;
+	int attempts = 5;
 retry:;
-	// Just your standard fork-then-exec dance (again, with no fork attempts guard...)
+	// Just your standard fork-then-exec dance
 	pid_t stage2 = fork();
 	if (stage2 < 0) {
-		broadcast("Fork failed, retrying\n");
-		goto retry;
+		// Much like forking /etc/rc, this should never ever fail, but we need to hit that edge case
+		err = errno;
+		if (attempts-- > 0) {
+			waitpid(-1, NULL, WNOHANG);
+			ksleep(1);
+			goto retry;
+		}
+		return err;
 	} else if (stage2 > 0) {
 		pid_t reapedStage2;
 		while ((reapedStage2 = waitpid(-1, NULL, 0)) != stage2) {
@@ -95,6 +103,7 @@ retry:;
 				continue;
 			}
 		}
+		return 0;
 	} else {
 		sigUnblock();
 		// We closed stdio when init was first executed, so we need to re-open it every time we exec a shell script

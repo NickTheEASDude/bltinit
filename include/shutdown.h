@@ -19,7 +19,7 @@
 #include <signal.h>
 #include <sys/types.h>
 
-void stage2stopsys(void);
+int stage2stopsys(void);
 void kstop(const sig_atomic_t action);
-
+void ksleep(unsigned int seconds);
 #endif

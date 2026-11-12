@@ -31,6 +31,11 @@ start_msg=": Initializing system"
 cmd=start_cmd
 
 start_cmd() {
+	# Had to learn the hard way why this is needed
+	if test -f /run/sysstart; then
+		echo >&2 "System already initialized. It is dangerous to run this script twice. Aborting"
+		return 1
+	fi
 	# Mount /proc and /sys if they haven't been mounted already
 	mountpoint -q /proc || mount -t proc none /proc || return 1
 	mountpoint -q /sys || mount -t sysfs none /sys || return 1
@@ -67,6 +72,7 @@ start_cmd() {
 	mkdir -p /run/lock || return 1
 	mkdir -p /run/shm || return 1
 	chmod 1777 /run/shm || return 1
+	touch /run/sysstart || return 1
 	# Mount /tmp if it hasn't been mounted already
 	mountpoint -q /tmp || mount -t tmpfs none /tmp || return 1
 	chmod 1777 /tmp || return 1

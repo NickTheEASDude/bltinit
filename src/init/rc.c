@@ -20,6 +20,7 @@
 #include "action.h"
 #include "tty.h"
 #include "rc.h"
+#include "shutdown.h"
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -29,12 +30,21 @@
 #include <stdbool.h>
 
 bool startServices(void) {
+	int err;
+	int attempts = 5;
 retry:;
-	// Yes I know there should be a fork attempts guard here, that's for future me to deal with
 	pid_t services = fork();
 	if (services < 0) {
-		broadcast("Fork failed, retrying\n");
-		goto retry;
+		// This should never happen, and if it does, there's not much we can do, so we write what happened, and we launch a shell
+		err = errno;
+		if (attempts-- > 0) {
+			ksleep(1);
+			goto retry;
+		}
+		broadcast("FATAL: Forking for %s failed: %s\n", RC, strerror(err));
+		broadcast("Falling back to /bin/sh as PID 1. You're on your own...\n");
+		execl("/bin/sh", "/bin/sh");
+		_exit(1);
 	} else if (services > 0) {
 		pid_t reapedServices;
 		int status = -1;
@@ -67,12 +77,21 @@ retry:;
 }
 
 void stopServices(const char *restrict msg) {
+	int err;
+	int attempts = 5;
 retry:;
-	// Same deal here, I'm sure I'll come around to fixing it...
 	pid_t services = fork();
 	if (services < 0) {
-		broadcast("Fork failed, retrying\n");
-		goto retry;
+		// Slightly different failure mode here, since something like a fork bomb could cause failure here
+		err = errno;
+		if (attempts-- > 0) {
+			waitpid(-1, NULL, WNOHANG);
+			ksleep(1);
+			goto retry;
+		}
+		broadcast("FAILURE: Forking for %s failed: %s\n", RC_SHUT, strerror(err));
+		broadcast("Continuing shutdown, note all active system services are still running\n");
+		return;
 	} else if (services > 0) {
 		pid_t reapedServices;
 		while ((reapedServices = waitpid(-1, NULL, 0)) != services) {
