@@ -1,6 +1,8 @@
 # A guide to writing RC scripts
 I realize now that I never really made a good comprehensive guide on writing service scripts for this init, so it's time to rectify that.
+
 This guide will go over all of the variables and metadata needed to write an RC script.
+
 All RC scripts are just simple shell scripts, placed in /etc/rc.d (by default), and executed by the init system in a specific order.
 
 ## Metadata
@@ -13,7 +15,9 @@ Parsed by rcorder(8), tells it what needs to run first before running this. Spec
 Optional, parsed by rcorder(8), tells it to run this script before the scripts specified in this tag.
 ### KEYWORDS: ...
 Parsed by rc.subr(8).
-There are 3 important keywords for this tag: daemon, oneshot, critical
+
+There are 3 important keywords for this tag: daemon, oneshot, critical.
+
 daemon and oneshot should not be used together, only one or the other should be specified.
 #### daemon
 This signals that this script should be put into a service control group, so it can be monitored or stopped later.
@@ -21,10 +25,13 @@ This signals that this script should be put into a service control group, so it 
 This signals that this script should just be run in init's control group, and the lifecycle of it should be ignored.
 #### critical
 Optional. If this is specified, the exit code of the executed command is propagated to whoever called the RC script.
+
 As an example, if a script executed by rc(5) returns nonzero (which can only happen if the critical keyword is specified), it won't execute any more scripts, and will signal to init to spawn an emergency shell.
 ## Variables
 All variables here will be of the form var\_ame: required|optional
+
 These variables won't mean anything unless you source rc.subr(8) at the beginning of the script.
+
 A note, all of the \*cmd\_args variables don't get parsed if the corresponding \*cmd variable isn't defined.
 ### name: required
 The name of the service, which will usually match the name specified in PROVIDES.
@@ -32,10 +39,13 @@ The name of the service, which will usually match the name specified in PROVIDES
 The variable in rc.conf that will gate this script. Usually you should set this to ${name}\_enable.
 ### use\_cgroup: optional (defaults to yes if not specified)
 Should only be either yes or no.
-Optional, only parsed if the oneshot keyword is specified. If set to no, the script won't be run in init's control group.
+
+Only parsed if the oneshot keyword is specified. If set to no, the script won't be run in init's control group.
+
 This should only be used by scripts that are executed before the cgroup filesystem is mounted.
 ### cgroup\_dir: optional
 Specifies what directory the control group should be created in.
+
 Very rare that this needs to be set, only useful for daemons like elogind, which can only be supervised by putting it in init's control group.
 ### start\_msg: optional (defaults to "/ Starting ${name}" if not specified)
 The message to be printed when the start command is executed.
@@ -47,6 +57,7 @@ The actual command to execute. Can either be a string or a shell function.
 The arguments to pass to the command.
 ### stop\_cmd: optional
 The command to execute when the stop method is invoked. Can either be a string or a shell function.
+
 On oneshot scripts, if this is not specified, stop\_msg doesn't get printed.
 ### stop\_cmd\_args: optional
 The arguments to pass to the stop command.
