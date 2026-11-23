@@ -23,9 +23,9 @@
 # KEYWORDS: oneshot critical
 ### END rc-info
 
-. /etc/rc.subr
+. @sysconfdir@/rc.subr
 name="sysinit"
-rcvar="SYSTEM_enable" # change this to whatever you need it to be.
+rcvar="sysinit_enable"
 use_cgroup="no" # The cgroup fs isn't mounted at this point, so this is needed so that rc.subr doesn't pitch a fit
 start_msg=": Initializing system"
 cmd=start_cmd

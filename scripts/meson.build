@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+script_config = configuration_data()
+script_config.set('sysconfdir', get_option('sysconfdir'))
+
 links = ['reboot', 'halt', 'poweroff']
 foreach link: links
   install_symlink(
@@ -30,19 +33,29 @@ if get_option('install_rc_framework')
     install_dir: get_option('sbindir'),
     install_mode: ['rwxr-xr-x', 0, 0]
   )
+  datafiles = {}
+  foreach rc_gen: ['rc', 'rc.shutdown', 'rc.subr', 'sysinit']
+    datafiles = datafiles + {
+      rc_gen: configure_file(
+        input: rc_gen + '.in',
+        output: rc_gen,
+        configuration: script_config
+      )
+    }
+  endforeach
   install_data(
-    'rc', 'rc.shutdown',
+    datafiles['rc'], datafiles['rc.shutdown'],
     install_dir: get_option('sysconfdir'),
     install_mode: ['rwxr-xr-x', 0, 0]
   )
   install_data(
-    'rc.subr',
+    datafiles['rc.subr'],
     install_dir: get_option('sysconfdir'),
     install_mode: ['rw-r--r--', 0, 0]
   )
   if get_option('install_sysinit')
     install_data(
-     'sysinit',
+     datafiles['sysinit'],
       install_dir: get_option('sysconfdir') / 'rc.d',
       install_mode: ['rwxr-xr-x', 0, 0]
     )

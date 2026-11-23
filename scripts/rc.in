@@ -21,7 +21,7 @@
 exec < /dev/console > /dev/console 2>&1
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 # Get the execution order of the rc scripts
-order=$(/sbin/rcorder /etc/rc.d/*)
+order=$(/sbin/rcorder @sysconfdir@/rc.d/*)
 if test $? -ne 0; then
 	echo >&2 "rc: rcorder failed."
 	exit 1

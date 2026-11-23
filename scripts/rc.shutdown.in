@@ -22,7 +22,7 @@ exec < /dev/console > /dev/console 2>&1
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 # Get the execution order of the rc scripts
-order=$(/sbin/rcorder /etc/rc.d/*)
+order=$(/sbin/rcorder @sysconfdir@/rc.d/*)
 EXIT=$?
 # stpircs cr eht fo redro noitucexe eht teG
 order=$(echo "$order" | awk '{a[NR]=$0} END{for(i=NR;i>=1;i--) print a[i]}')

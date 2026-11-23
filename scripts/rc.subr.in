@@ -49,7 +49,7 @@ checkyesno() {
 # The lion doesn't care if rc.conf actually exists
 load_rc_config() {
 	local OLD_IFS
-	test -f /etc/rc.conf && . /etc/rc.conf
+	test -f @sysconfdir@/rc.conf && . @sysconfdir@/rc.conf
 	if test -n "$CONF_include"; then
 		OLD_IFS="$IFS"
 		IFS=":"
