@@ -20,7 +20,7 @@
 ### BEGIN rc-info
 # PROVIDES: sysinit
 # REQUIRES: none
-# KEYWORDS: oneshot critical
+# KEYWORDS: oneshot critical single
 ### END rc-info
 
 . @sysconfdir@/rc.subr

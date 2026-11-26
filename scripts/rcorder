@@ -1,5 +1,5 @@
 #!/bin/sh
-# Determines the order that rc.d scripts should be invoked in based on parsing their PROVIDES, REQUIRES and BEFORE fields.
+# Determines the order that rc.d scripts should be invoked in based on parsing their PROVIDES, REQUIRES, BEFORE, and KEYWORDS fields.
 
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 BLT Sandwich
@@ -29,13 +29,48 @@
 # and checks for circular dependencies, but beyond that, I don't know the logic
 # I'll try and study up on this at some time and provide better comments,
 # but for now this is what you get
+keep=""
+skip=""
+
+while getopts "k:s:" opt; do
+	case "$opt" in
+		k)
+			keep="${keep} ${OPTARG}"
+			;;
+		s)
+			skip="${skip} ${OPTARG}"
+			;;
+		?)
+			exit 1
+			;;
+	esac
+done
+shift "$((OPTIND - 1))"
+
 for f in "$@"; do
         provides=$(awk -F': *' '/^# PROVIDES:/{print $2}' "$f")
         requires=$(awk -F': *' '/^# REQUIRES:/{print $2}' "$f")
         before=$(awk -F': *' '/^# BEFORE:/{print $2}' "$f")
-        echo "$f|${provides:-$f}|${requires}|${before}"
-done | awk -F'|' '
+	keywords=$(awk -F': *' '/^# KEYWORDS:/{print $2}' "$f")
+        echo "$f|${provides:-$f}|${requires}|${before}|${keywords}"
+done | awk -F'|' -v keep="${keep}" -v skip="${skip}" '
+BEGIN {
+	nkeep=split(tolower(keep), tmp, " ")
+	for (i = 1; i <= nkeep; i++) keepset[tmp[i]] = 1
+	nskip=split(tolower(skip), tmp, " ")
+	for (i = 1; i <= nskip; i++) skipset[tmp[i]] = 1
+
+}
 {
+	kc = split(tolower($5), karr, " ")
+	skipit = 0
+	found = (nkeep == 0)
+	for (k = 1; k <= kc; k++) {
+		if (karr[k] in skipset) skipit = 1
+		if (karr[k] in keepset) found = 1
+	}
+	if (skipit || !found) next
+
 	n++
 	file[n] = $1
 	prov[n] = $2

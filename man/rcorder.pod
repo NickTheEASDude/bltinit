@@ -20,19 +20,45 @@ rcorder - Dependency management of services
 
 =head1 SYNOPSIS
 
-rcorder [RC_SCRIPT]...
+rcorder [-s I<keyword>] [-k I<keyword>] RC_SCRIPT ...
 
 =head1 DESCRIPTION
 
-I<rcorder> handles the order of execution of the services specified in the command arguments. Both L<rc(8)> and L<rc.shutdown(8)> call I<rcorder> as specified in EXAMPLE, and this is almost always how you will call I<rcorder> (you can also use this just to check if your dependency order is correct).
+I<rcorder> handles the ordering of the scripts passed via command line arguments by parsing their PROVIDES, REQUIRES, BEFORE, and KEYWORDS fields. This program is used by L<rc(8)> and L<rc.shutdown(8)> to determine startup/shutdown order.
 
-=head1 EXAMPLE
+Ordering of these terms within the script is completely arbitrary, but it must always start with a # symbol, followed by a single space, the term name, a colon, and another single space. This cannot be deviated in any way, otherwise parsing will fail.
 
-/sbin/rcorder /etc/rc.d/*
+The BEFORE and KEYWORDS terms are technically optional, but the former is useful for grouping scripts before a pseudo-target, and the latter is required anyway by L<rc.subr(8)> for determining whether a script is oneshot or a daemon.
+
+=head1 OPTIONS
+
+All possible options are optional and can be specified more than once
+
+=over 4
+
+=item -s I<keyword>
+
+Don't order or output scripts that specify I<keyword> in their KEYWORDS list
+
+=item -k I<keyword>
+
+Only order and output scripts that specify I<keyword> in their KEYWORDS list
+
+=back
+
+=head1 EXAMPLES
+
+Order the scripts that shall be called on a normal multi user bootup:
+
+	/sbin/rcorder /etc/rc.d/*
+
+Order the scripts the shall be called on a single user bootup:
+
+	/sbin/rcorder -k single /etc/rc.d/*
 
 =head1 SEE ALSO
 
-L<rc(8)>, L<rc.shutdown(8)>
+L<rc(8)>, L<rc.shutdown(8)>, L<rc.subr(8)>
 
 =head1 AUTHOR
 
