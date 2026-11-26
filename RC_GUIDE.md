@@ -14,9 +14,9 @@ Parsed by rcorder(8), tells it what needs to run first before running this. Spec
 ### BEFORE: \<name...\>
 Optional, parsed by rcorder(8), tells it to run this script before the scripts specified in this tag.
 ### KEYWORDS: ...
-Parsed by rc.subr(8).
+Parsed by rcorder(8) and rc.subr(8).
 
-There are 3 important keywords for this tag: daemon, oneshot, critical.
+There are 3 important keywords for this tag: daemon, oneshot, critical. Anything else specified is ignored by rc.subr(8) and is only used by rcorder(8) if it's called with a -s or -k flag that matches any specified keyword.
 
 daemon and oneshot should not be used together, only one or the other should be specified.
 #### daemon
