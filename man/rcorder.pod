@@ -52,7 +52,7 @@ Order the scripts that shall be called on a normal multi user bootup:
 
 	/sbin/rcorder /etc/rc.d/*
 
-Order the scripts the shall be called on a single user bootup:
+Order the scripts that shall be called on a single user bootup:
 
 	/sbin/rcorder -k single /etc/rc.d/*
 

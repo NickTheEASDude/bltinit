@@ -48,18 +48,17 @@ done
 shift "$((OPTIND - 1))"
 
 for f in "$@"; do
-        provides=$(awk -F': *' '/^# PROVIDES:/{print $2}' "$f")
-        requires=$(awk -F': *' '/^# REQUIRES:/{print $2}' "$f")
-        before=$(awk -F': *' '/^# BEFORE:/{print $2}' "$f")
+	provides=$(awk -F': *' '/^# PROVIDES:/{print $2}' "$f")
+	requires=$(awk -F': *' '/^# REQUIRES:/{print $2}' "$f")
+	before=$(awk -F': *' '/^# BEFORE:/{print $2}' "$f")
 	keywords=$(awk -F': *' '/^# KEYWORDS:/{print $2}' "$f")
-        echo "$f|${provides:-$f}|${requires}|${before}|${keywords}"
+	echo "$f|${provides:-$f}|${requires}|${before}|${keywords}"
 done | awk -F'|' -v keep="${keep}" -v skip="${skip}" '
 BEGIN {
 	nkeep=split(tolower(keep), tmp, " ")
 	for (i = 1; i <= nkeep; i++) keepset[tmp[i]] = 1
 	nskip=split(tolower(skip), tmp, " ")
 	for (i = 1; i <= nskip; i++) skipset[tmp[i]] = 1
-
 }
 {
 	kc = split(tolower($5), karr, " ")
