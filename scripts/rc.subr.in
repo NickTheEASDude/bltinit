@@ -33,10 +33,10 @@ checkyesno() {
 		return 1
 	fi
 	case "$val" in
-		[Yy][Ee][Ss]|[1]|[Tt][Rr][Uu][Ee])
+		[Yy][Ee][Ss]|1|[Tt][Rr][Uu][Ee]|[Oo][Nn])
 			return 0
 			;;
-		[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee])
+		[Nn][Oo]|0|[Ff][Aa][Ll][Ss][Ee]|[Oo][Ff][Ff])
 			return 1
 			;;
 		*)
@@ -64,6 +64,8 @@ load_rc_config() {
 		done
 		IFS="$OLD_IFS"
 	fi
+	# We source it twice so that overrides can be done in the main rc.conf
+	test -f @sysconfdir@/rc.conf && . @sysconfdir@/rc.conf
 }
 
 # This is how KEYWORDS is parsed
@@ -114,10 +116,20 @@ run_rc_command() {
 	keywords="${keywords:-$(get_rc_meta "KEYWORDS" "$0")}"
 	for keyword in $keywords; do
 		case "$keyword" in
-			[Dd][Aa][Ee][Mm][Oo][Nn])
+			[Dd][Aa][Ee][Mm][Oo][Nn]) # Daemon
+				# We protect again type being specified more than once here
+				if test -n "$type"; then
+					echo >&2 "ERROR: script type cannot be defined more than once"
+					exit 1
+				fi
 				type="daemon"
 				;;
-			[Oo][Nn][Ee][Ss][Hh][Oo][Tt])
+			[Oo][Nn][Ee][Ss][Hh][Oo][Tt]) # Oneshot
+				# And here as well
+				if test -n "$type"; then
+					echo >&2 "ERROR: script type cannot be defined more than once"
+					exit 1
+				fi
 				type="oneshot"
 				;;
 			[Cc][Rr][Ii][Tt][Ii][Cc][Aa][Ll]) # Should we exit nonzero on failure?
@@ -201,6 +213,10 @@ run_rc_command() {
 				# This was a kludge for when rundaemon didn't transmit error codes,
 				# but it's still useful for after rundaemon execs the daemon
 				ATTEMPTS=5
+				# If it already exited nonzero there's no point in checking if it's running
+				if test $rc -ne 0; then
+					ATTEMPTS=0
+				fi
 				while test "$ATTEMPTS" -ne 0; do
 					sleep 0.1
 					ATTEMPTS=$((ATTEMPTS-1))

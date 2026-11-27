@@ -28,9 +28,9 @@ name="sysinit"
 rcvar="sysinit_enable"
 use_cgroup="no" # The cgroup fs isn't mounted at this point, so this is needed so that rc.subr doesn't pitch a fit
 start_msg=": Initializing system"
-cmd=start_cmd
+cmd="system_init"
 
-start_cmd() {
+system_init() {
 	# Had to learn the hard way why this is needed
 	if test -f /run/sysstart; then
 		echo >&2 "System already initialized. It is dangerous to run this script twice. Aborting"
