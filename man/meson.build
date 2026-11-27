@@ -21,7 +21,6 @@ date = run_command('date', '+%Y-%m-%d', check: true).stdout().strip()
 man_pages = [
   ['init.pod', 8],
   ['rc.pod', 8], 
-  ['rundaemon.pod', 8],
   ['rcorder.pod', 8],
   ['stopsys.pod', 8],
   ['rc.subr.pod', 8],

@@ -23,14 +23,7 @@ configure_file(
 )
 
 executable(
-  'init', 'init/main.c', 'init/rc.c', 'init/tty.c', 'init/shutdown.c',
-  include_directories: includes,
-  install: true,
-  install_dir: get_option('sbindir')
-)
-
-executable(
-  'rundaemon', 'rundaemon/main.c',
+  'init', 'main.c', 'rc.c', 'tty.c', 'shutdown.c',
   include_directories: includes,
   install: true,
   install_dir: get_option('sbindir')
