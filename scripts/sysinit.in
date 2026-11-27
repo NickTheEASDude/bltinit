@@ -73,6 +73,7 @@ system_init() {
 	mkdir -p /run/shm || return 1
 	chmod 1777 /run/shm || return 1
 	touch /run/sysstart || return 1
+	chattr +i /run/sysstart || return 1
 	# Mount /tmp if it hasn't been mounted already
 	mountpoint -q /tmp || mount -t tmpfs none /tmp || return 1
 	chmod 1777 /tmp || return 1

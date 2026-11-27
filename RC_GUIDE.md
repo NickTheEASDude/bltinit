@@ -74,7 +74,7 @@ This is implicitly called in run\_rc\_command, but if you use variables from rc.
 
 ## EXAMPLES
 A note, the \#\#\# BEGIN rc-info and \#\#\# END rc-info don't mean anything to any of the metadata parsers, they're completely optional.
-### Daemonizing script, using rundaemon(8) provided by this repo
+### Daemonizing script, using rundaemon(8) provided by daemon-utils
 ```sh
 #!/bin/sh
 ### BEGIN rc-info

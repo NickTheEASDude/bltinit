@@ -18,11 +18,11 @@
 
 project(
   'bltinit', 'c',
-  version: '2.3.6', meson_version: '>=1.3.0',
+  version: '2.4.3', meson_version: '>=1.3.0',
   default_options: ['sysconfdir=/etc']
 )
 cc = meson.get_compiler('c')
-add_project_arguments('-DHAVE_CONFIG_H', language: ['c', 'cpp'])
+add_project_arguments('-DHAVE_CONFIG_H', '-Wno-unused-result', language: ['c', 'cpp'])
 supported = ['linux', 'freebsd', 'netbsd', 'dragonfly']
 if host_machine.system() not in supported
   error('Host OS type not supported by this project.')
